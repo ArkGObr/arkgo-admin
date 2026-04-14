@@ -1,0 +1,91 @@
+/* ═══════════════════════════════════════════════════════════
+   UrbGo Admin — Design Tokens
+   Mirror of Flutter app_colors.dart, app_typography.dart, 
+   app_spacing.dart
+   ═══════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;700;900&family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap');
+
+:root {
+  /* ── Backgrounds ──────────────────────────────────────── */
+  --bg: #0A0A0A;
+  --surface: #161616;
+  --surface-high: #1E1E1E;
+  --surface-border: #2A2A2A;
+  --surface-hover: #222222;
+
+  /* ── Brand ────────────────────────────────────────────── */
+  --primary: #99EB09;
+  --primary-dark: #88D208;
+  --primary-deep: #003D1A;
+  --primary-glow: rgba(153, 235, 9, 0.15);
+  --primary-glow-strong: rgba(153, 235, 9, 0.25);
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --text-primary: #FFFFFF;
+  --text-secondary: #AAAAAA;
+  --text-tertiary: #666666;
+  --text-inverse: #0A0A0A;
+
+  /* ── Semantic ─────────────────────────────────────────── */
+  --success: #99EB09;
+  --warning: #FFB800;
+  --error: #FF3B3B;
+  --info: #3B9EFF;
+
+  /* ── Delivery Status ──────────────────────────────────── */
+  --status-pending: #FFB800;
+  --status-accepted: #3B9EFF;
+  --status-in-progress: #99EB09;
+  --status-completed: #88D208;
+  --status-cancelled: #FF3B3B;
+
+  /* ── Overlay / Shimmer ────────────────────────────────── */
+  --overlay: rgba(0, 0, 0, 0.8);
+  --shimmer-1: #1A1A1A;
+  --shimmer-2: #252525;
+
+  /* ── Typography ───────────────────────────────────────── */
+  --font-display: 'Archivo', sans-serif;
+  --font-heading: 'DM Sans', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* ── Spacing ──────────────────────────────────────────── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 40px;
+  --space-5xl: 48px;
+  --space-6xl: 64px;
+
+  /* ── Border Radius ────────────────────────────────────── */
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+  --radius-full: 999px;
+
+  /* ── Sidebar ──────────────────────────────────────────── */
+  --sidebar-width: 260px;
+  --sidebar-collapsed: 72px;
+  --topbar-height: 64px;
+
+  /* ── Transitions ──────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --duration-fast: 120ms;
+  --duration-normal: 200ms;
+  --duration-slow: 400ms;
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 4px 20px var(--primary-glow);
+}

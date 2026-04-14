@@ -1,0 +1,82 @@
+.stat-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-lg);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-xl);
+  transition: all var(--duration-normal) var(--ease-out);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  opacity: 0.04;
+  transform: translate(30%, -30%);
+  transition: opacity var(--duration-normal) var(--ease-out);
+}
+
+.stat-card:hover {
+  border-color: var(--text-tertiary);
+}
+
+.stat-card:hover::after {
+  opacity: 0.08;
+}
+
+.stat-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-card-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.stat-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-xs);
+}
+
+.stat-card-value {
+  font-family: var(--font-body);
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+  animation: countUp var(--duration-slow) var(--ease-out) both;
+}
+
+.stat-card-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: var(--space-xs);
+}
+
+.stat-card-trend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.stat-card-trend.up { color: var(--success); }
+.stat-card-trend.down { color: var(--error); }
