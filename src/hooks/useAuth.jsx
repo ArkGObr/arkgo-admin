@@ -27,29 +27,29 @@ export function AuthProvider({ children }) {
         if (isMounted) setLoading(false);
       });
       clearTimeout(safetyTimeout);
-      return;
-    }
-    
-    // Tag this tab as active
-    sessionStorage.setItem('urbgo_session_active', 'true');
+      // We do NOT return here, otherwise we skip initializing the onAuthStateChange listener needed for login!
+    } else {
+      // Tag this tab as active
+      sessionStorage.setItem('urbgo_session_active', 'true');
 
-    // Check existing session
-    supabase.auth.getSession()
-      .then(({ data: { session } }) => {
-        clearTimeout(safetyTimeout);
-        if (!isMounted) return;
-        if (session?.user) {
-          setUser(session.user);
-          fetchProfile(session.user.id);
-        } else {
-          setLoading(false);
-        }
-      })
-      .catch((err) => {
-        clearTimeout(safetyTimeout);
-        console.error('Session error:', err);
-        if (isMounted) setLoading(false);
-      });
+      // Check existing session only if we are allowed to keep it
+      supabase.auth.getSession()
+        .then(({ data: { session } }) => {
+          clearTimeout(safetyTimeout);
+          if (!isMounted) return;
+          if (session?.user) {
+            setUser(session.user);
+            fetchProfile(session.user.id);
+          } else {
+            setLoading(false);
+          }
+        })
+        .catch((err) => {
+          clearTimeout(safetyTimeout);
+          console.error('Session error:', err);
+          if (isMounted) setLoading(false);
+        });
+    }
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
