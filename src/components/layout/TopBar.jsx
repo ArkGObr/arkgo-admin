@@ -33,7 +33,7 @@ export default function TopBar() {
         </div>
         <button
           className="btn btn-ghost btn-icon btn-sm"
-          onClick={() => window.location.reload()}
+          onClick={() => window.dispatchEvent(new CustomEvent('app:refresh'))}
           title="Atualizar"
         >
           <RefreshCw size={16} />

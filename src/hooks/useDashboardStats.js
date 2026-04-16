@@ -94,6 +94,15 @@ export function useDashboardStats() {
 
   useEffect(() => {
     fetchStats();
+
+    const handleRefresh = () => {
+      fetchStats();
+    };
+
+    window.addEventListener('app:refresh', handleRefresh);
+    return () => {
+      window.removeEventListener('app:refresh', handleRefresh);
+    };
   }, [fetchStats]);
 
   return { stats, loading, error, refetch: fetchStats };

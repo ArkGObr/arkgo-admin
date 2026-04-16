@@ -82,6 +82,15 @@ export function useSupabase(table, options = {}) {
 
   useEffect(() => {
     fetchData();
+
+    const handleRefresh = () => {
+      fetchData();
+    };
+
+    window.addEventListener('app:refresh', handleRefresh);
+    return () => {
+      window.removeEventListener('app:refresh', handleRefresh);
+    };
   }, [fetchData]);
 
   return { data, loading, error, refetch: fetchData };
