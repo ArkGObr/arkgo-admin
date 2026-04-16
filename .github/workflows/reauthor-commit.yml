@@ -1,0 +1,23 @@
+name: Re-author last commit
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  reauthor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Amend commit author
+        run: |
+          git config user.name "urbgodelivery"
+          git config user.email "urbgodelivery@gmail.com"
+          git commit --amend --no-edit --author="urbgodelivery <urbgodelivery@gmail.com>"
+          git push --force
