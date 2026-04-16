@@ -72,6 +72,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function fetchProfile(userId) {
+    setLoading(true);
     try {
       const { data, error } = await supabase
         .from('users')
