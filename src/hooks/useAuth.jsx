@@ -9,9 +9,19 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
+    // Safety net: in some browsers/scenarios, Supabase auth lock gets stuck on hard refresh
+    const safetyTimeout = setTimeout(() => {
+      if (isMounted && loading) {
+        setLoading(false);
+      }
+    }, 1500);
+
     // Check existing session
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
+        clearTimeout(safetyTimeout);
+        if (!isMounted) return;
         if (session?.user) {
           setUser(session.user);
           fetchProfile(session.user.id);
@@ -20,8 +30,9 @@ export function AuthProvider({ children }) {
         }
       })
       .catch((err) => {
+        clearTimeout(safetyTimeout);
         console.error('Session error:', err);
-        setLoading(false);
+        if (isMounted) setLoading(false);
       });
 
     // Listen for auth changes
@@ -37,7 +48,11 @@ export function AuthProvider({ children }) {
       }
     );
 
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   async function fetchProfile(userId) {
