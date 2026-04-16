@@ -17,7 +17,7 @@ jobs:
 
       - name: Amend commit author
         run: |
-          git config user.name "urbgodelivery"
+          git config user.name "urbgodelivey"
           git config user.email "urbgodelivery@gmail.com"
-          git commit --amend --no-edit --author="urbgodelivery <urbgodelivery@gmail.com>"
+          git commit --amend --no-edit --author="urbgodelivey <urbgodelivery@gmail.com>"
           git push --force
