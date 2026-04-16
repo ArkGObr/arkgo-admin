@@ -12,6 +12,7 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const { signIn } = useAuth();
   const navigate = useNavigate();
 
@@ -21,7 +22,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await signIn(email, password);
+      await signIn(email, password, rememberMe);
       navigate('/', { replace: true });
     } catch (err) {
       if (err.message?.includes('Invalid login')) {
@@ -72,6 +73,15 @@ export default function Login() {
               onChange={e => setPassword(e.target.value)}
               required
             />
+
+            <label className="login-checkbox">
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={e => setRememberMe(e.target.checked)}
+              />
+              <span>Manter conectado</span>
+            </label>
 
             <Button type="submit" loading={loading} icon={Lock}>
               Entrar

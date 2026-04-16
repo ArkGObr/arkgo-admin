@@ -17,6 +17,22 @@ export function AuthProvider({ children }) {
       }
     }, 1500);
 
+    // Enforce "Keep me signed in" policy
+    const remembered = localStorage.getItem('urbgo_remember_me') === 'true';
+    const hasActiveSession = sessionStorage.getItem('urbgo_session_active') === 'true';
+    
+    if (!remembered && !hasActiveSession) {
+      // Tab was closed and "Remember me" wasn't checked. End session locally.
+      supabase.auth.signOut().finally(() => {
+        if (isMounted) setLoading(false);
+      });
+      clearTimeout(safetyTimeout);
+      return;
+    }
+    
+    // Tag this tab as active
+    sessionStorage.setItem('urbgo_session_active', 'true');
+
     // Check existing session
     supabase.auth.getSession()
       .then(({ data: { session } }) => {
@@ -82,17 +98,27 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function signIn(email, password) {
+  async function signIn(email, password, rememberMe = false) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) throw error;
+    
+    if (rememberMe) {
+      localStorage.setItem('urbgo_remember_me', 'true');
+    } else {
+      localStorage.removeItem('urbgo_remember_me');
+    }
+    sessionStorage.setItem('urbgo_session_active', 'true');
+    
     return data;
   }
 
   async function signOut() {
     await supabase.auth.signOut();
+    localStorage.removeItem('urbgo_remember_me');
+    sessionStorage.removeItem('urbgo_session_active');
     setUser(null);
     setProfile(null);
   }
