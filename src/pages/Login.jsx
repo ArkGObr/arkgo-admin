@@ -38,8 +38,8 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <div className="login-logo">
-            <span>U</span>
+          <div className="login-logo" style={{ background: 'transparent' }}>
+            <img src="/icon.png" alt="UrbGo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} />
           </div>
           <h1 className="login-title">UrbGo Admin</h1>
           <p className="login-subtitle">Painel administrativo</p>

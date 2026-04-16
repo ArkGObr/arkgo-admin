@@ -38,8 +38,8 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-mark">
-          <span>U</span>
+        <div className="sidebar-logo-mark" style={{ background: 'transparent' }}>
+          <img src="/icon.png" alt="UrbGo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} />
         </div>
         <div className="sidebar-logo-text">
           <h1>UrbGo</h1>
