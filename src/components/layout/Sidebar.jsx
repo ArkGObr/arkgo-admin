@@ -9,6 +9,9 @@ import {
   DollarSign,
   MapPin,
   LogOut,
+  Car,
+  Zap,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
@@ -20,7 +23,13 @@ const NAV_ITEMS = [
   { path: '/map', label: 'Mapa ao Vivo', icon: MapPin },
   { section: 'Gestão' },
   { path: '/users', label: 'Clientes', icon: Users },
-  { path: '/motoboys', label: 'Motoboys', icon: Bike },
+  { subsection: 'Entregadores' },
+  { path: '/drivers/motoboy',  label: 'Motoboys',    icon: Bike,    sub: true },
+  { path: '/drivers/bikeboy',  label: 'Bikeboys',    icon: Bike,    sub: true },
+  { path: '/drivers/mototaxi', label: 'Mototáxi',    icon: Zap,     sub: true },
+  { path: '/drivers/car',      label: 'Carro',        icon: Car,     sub: true },
+  { path: '/drivers/van',      label: 'Utilitário',   icon: Truck,   sub: true },
+  { path: '/drivers/truck',    label: 'Caminhão',     icon: Package, sub: true },
   { section: 'Financeiro' },
   { path: '/transactions', label: 'Transações', icon: ArrowLeftRight },
   { path: '/recharges', label: 'Recargas', icon: RefreshCw },
@@ -57,6 +66,13 @@ export default function Sidebar() {
               </div>
             );
           }
+          if (item.subsection) {
+            return (
+              <div key={`subsection-${i}`} className="sidebar-subsection-label">
+                {item.subsection}
+              </div>
+            );
+          }
           const Icon = item.icon;
           return (
             <NavLink
@@ -64,10 +80,10 @@ export default function Sidebar() {
               to={item.path}
               end={item.path === '/'}
               className={({ isActive }) =>
-                `sidebar-link ${isActive ? 'active' : ''}`
+                `sidebar-link ${item.sub ? 'sidebar-link--sub' : ''} ${isActive ? 'active' : ''}`
               }
             >
-              <Icon size={18} />
+              <Icon size={item.sub ? 15 : 18} />
               <span>{item.label}</span>
               {item.badge && (
                 <span className="sidebar-link-badge">{item.badge}</span>

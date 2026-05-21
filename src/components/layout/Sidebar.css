@@ -75,6 +75,17 @@
   padding: var(--space-lg) var(--space-md) var(--space-sm);
 }
 
+.sidebar-subsection-label {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: var(--space-sm) var(--space-md) var(--space-xs);
+  padding-left: calc(var(--space-md) + 12px);
+  opacity: 0.6;
+}
+
 .sidebar-link {
   display: flex;
   align-items: center;
@@ -87,6 +98,11 @@
   transition: all var(--duration-fast) var(--ease-out);
   margin-bottom: 2px;
   position: relative;
+}
+
+.sidebar-link--sub {
+  padding-left: calc(var(--space-md) + 12px);
+  font-size: 13px;
 }
 
 .sidebar-link:hover {
