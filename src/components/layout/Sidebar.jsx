@@ -9,6 +9,9 @@ import {
   DollarSign,
   MapPin,
   LogOut,
+  Car,
+  Zap,
+  Package,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
@@ -20,7 +23,13 @@ const NAV_ITEMS = [
   { path: '/map', label: 'Mapa ao Vivo', icon: MapPin },
   { section: 'Gestão' },
   { path: '/users', label: 'Clientes', icon: Users },
-  { path: '/motoboys', label: 'Motoboys', icon: Bike },
+  { subsection: 'Entregadores' },
+  { path: '/drivers/motoboy', label: 'Motoboy', icon: Bike, sub: true },
+  { path: '/drivers/bikeboy', label: 'Bikeboy', icon: Bike, sub: true },
+  { path: '/drivers/mototaxi', label: 'Mototáxi', icon: Zap, sub: true },
+  { path: '/drivers/car', label: 'Carro', icon: Car, sub: true },
+  { path: '/drivers/van', label: 'Utilitário', icon: Truck, sub: true },
+  { path: '/drivers/truck', label: 'Caminhão', icon: Package, sub: true },
   { section: 'Financeiro' },
   { path: '/transactions', label: 'Transações', icon: ArrowLeftRight },
   { path: '/recharges', label: 'Recargas', icon: RefreshCw },
@@ -38,11 +47,11 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-mark" style={{ background: 'transparent' }}>
-          <img src="/icon.png" alt="UrbGo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} />
+        <div className="sidebar-logo-mark">
+          <img src="/favicon.png" alt="ArkGo" className="sidebar-favicon-img" />
         </div>
         <div className="sidebar-logo-text">
-          <h1>UrbGo</h1>
+          <h1>ArkGo</h1>
           <span>Admin Panel</span>
         </div>
       </div>
@@ -57,6 +66,13 @@ export default function Sidebar() {
               </div>
             );
           }
+          if (item.subsection) {
+            return (
+              <div key={`subsection-${i}`} className="sidebar-subsection-label">
+                {item.subsection}
+              </div>
+            );
+          }
           const Icon = item.icon;
           return (
             <NavLink
@@ -64,10 +80,10 @@ export default function Sidebar() {
               to={item.path}
               end={item.path === '/'}
               className={({ isActive }) =>
-                `sidebar-link ${isActive ? 'active' : ''}`
+                `sidebar-link ${item.sub ? 'sidebar-link--sub' : ''} ${isActive ? 'active' : ''}`
               }
             >
-              <Icon size={18} />
+              <Icon size={item.sub ? 15 : 18} />
               <span>{item.label}</span>
               {item.badge && (
                 <span className="sidebar-link-badge">{item.badge}</span>

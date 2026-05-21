@@ -39,10 +39,10 @@ export default function Login() {
     <div className="login-page">
       <div className="login-card">
         <div className="login-header">
-          <div className="login-logo" style={{ background: 'transparent' }}>
-            <img src="/icon.png" alt="UrbGo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} />
+          <div className="login-logo">
+            <img src="/favicon.png" alt="ArkGo" className="login-favicon-img" />
           </div>
-          <h1 className="login-title">UrbGo Admin</h1>
+          <h1 className="login-title">ArkGo Admin</h1>
           <p className="login-subtitle">Painel administrativo</p>
         </div>
 
@@ -58,7 +58,7 @@ export default function Login() {
             <Input
               label="Email"
               type="email"
-              placeholder="admin@urbgo.com"
+              placeholder="admin@arkgo.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required

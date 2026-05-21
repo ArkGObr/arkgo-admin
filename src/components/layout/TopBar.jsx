@@ -6,7 +6,13 @@ const PAGE_TITLES = {
   '/': 'Dashboard',
   '/deliveries': 'Entregas',
   '/users': 'Clientes',
-  '/motoboys': 'Motoboys',
+  '/Motoboy': 'Motoboy',
+  '/drivers/motoboy': 'Motoboy',
+  '/drivers/bikeboy': 'Bikeboy',
+  '/drivers/mototaxi': 'Mototáxi',
+  '/drivers/car': 'Carros',
+  '/drivers/van': 'Utilitários',
+  '/drivers/truck': 'Caminhões',
   '/transactions': 'Transações',
   '/recharges': 'Recargas',
   '/pricing': 'Preços',
@@ -21,7 +27,7 @@ export default function TopBar() {
     <header className="topbar">
       <div className="topbar-left">
         <div className="topbar-breadcrumb">
-          <span>UrbGo Admin</span>
+          <span>ArkGo Admin</span>
           <span style={{ color: 'var(--text-tertiary)' }}>/</span>
           <strong>{title}</strong>
         </div>

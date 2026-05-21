@@ -20,7 +20,7 @@ export default function Recharges() {
   if (statusFilter) filters.push({ column: 'gateway_status', operator: 'eq', value: statusFilter });
 
   const { data, loading } = useSupabase('recharges', {
-    select: '*, motoboys!recharges_motoboy_id_fkey(users!motoboys_id_fkey(name))',
+    select: '*, Motoboy!recharges_motoboy_id_fkey(users!Motoboy_id_fkey(name))',
     filters,
     order: { column: 'created_at', ascending: false },
   });
@@ -39,7 +39,7 @@ export default function Recharges() {
       key: 'motoboy',
       label: 'Motoboy',
       className: 'text-primary',
-      render: row => row.motoboys?.users?.name || '—',
+      render: row => row.Motoboy?.users?.name || '—',
     },
     {
       key: 'amount',
@@ -113,7 +113,7 @@ export default function Recharges() {
         columns={columns}
         data={data}
         loading={loading}
-        searchKeys={['motoboys.users.name', 'gateway_id', 'pix_code']}
+        searchKeys={['Motoboy.users.name', 'gateway_id', 'pix_code']}
         searchPlaceholder="Buscar por motoboy ou gateway ID..."
         emptyMessage="Nenhuma recarga encontrada"
       />

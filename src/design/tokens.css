@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════════════════
-   UrbGo Admin — Design Tokens
+   ArkGo Admin — Design Tokens
    Mirror of Flutter app_colors.dart, app_typography.dart, 
    app_spacing.dart
    ═══════════════════════════════════════════════════════════ */
@@ -15,11 +15,11 @@
   --surface-hover: #222222;
 
   /* ── Brand ────────────────────────────────────────────── */
-  --primary: #99EB09;
-  --primary-dark: #88D208;
+  --primary: #66EB00;
+  --primary-dark: #52BD00;
   --primary-deep: #003D1A;
-  --primary-glow: rgba(153, 235, 9, 0.15);
-  --primary-glow-strong: rgba(153, 235, 9, 0.25);
+  --primary-glow: rgba(102, 235, 0, 0.15);
+  --primary-glow-strong: rgba(102, 235, 0, 0.25);
 
   /* ── Text ─────────────────────────────────────────────── */
   --text-primary: #FFFFFF;
@@ -36,8 +36,8 @@
   /* ── Delivery Status ──────────────────────────────────── */
   --status-pending: #FFB800;
   --status-accepted: #3B9EFF;
-  --status-in-progress: #99EB09;
-  --status-completed: #88D208;
+  --status-in-progress: #66EB00;
+  --status-completed: #52BD00;
   --status-cancelled: #FF3B3B;
 
   /* ── Overlay / Shimmer ────────────────────────────────── */

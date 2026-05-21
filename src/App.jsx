@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Deliveries from './pages/Deliveries';
 import UsersPage from './pages/Users';
 import Motoboys from './pages/Motoboys';
+import Drivers from './pages/Drivers';
 import Transactions from './pages/Transactions';
 import Recharges from './pages/Recharges';
 import Pricing from './pages/Pricing';
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="deliveries" element={<Deliveries />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="motoboys" element={<Motoboys />} />
+            <Route path="drivers/:category" element={<Drivers />} />
             <Route path="transactions" element={<Transactions />} />
             <Route path="recharges" element={<Recharges />} />
             <Route path="pricing" element={<Pricing />} />

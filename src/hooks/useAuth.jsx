@@ -18,8 +18,8 @@ export function AuthProvider({ children }) {
     }, 1500);
 
     // Enforce "Keep me signed in" policy
-    const remembered = localStorage.getItem('urbgo_remember_me') === 'true';
-    const hasActiveSession = sessionStorage.getItem('urbgo_session_active') === 'true';
+    const remembered = localStorage.getItem('arkgo_remember_me') === 'true';
+    const hasActiveSession = sessionStorage.getItem('arkgo_session_active') === 'true';
     
     if (!remembered && !hasActiveSession) {
       // Tab was closed and "Remember me" wasn't checked. End session locally.
@@ -30,7 +30,7 @@ export function AuthProvider({ children }) {
       // We do NOT return here, otherwise we skip initializing the onAuthStateChange listener needed for login!
     } else {
       // Tag this tab as active
-      sessionStorage.setItem('urbgo_session_active', 'true');
+      sessionStorage.setItem('arkgo_session_active', 'true');
 
       // Check existing session only if we are allowed to keep it
       supabase.auth.getSession()
@@ -107,19 +107,19 @@ export function AuthProvider({ children }) {
     if (error) throw error;
     
     if (rememberMe) {
-      localStorage.setItem('urbgo_remember_me', 'true');
+      localStorage.setItem('arkgo_remember_me', 'true');
     } else {
-      localStorage.removeItem('urbgo_remember_me');
+      localStorage.removeItem('arkgo_remember_me');
     }
-    sessionStorage.setItem('urbgo_session_active', 'true');
+    sessionStorage.setItem('arkgo_session_active', 'true');
     
     return data;
   }
 
   async function signOut() {
     await supabase.auth.signOut();
-    localStorage.removeItem('urbgo_remember_me');
-    sessionStorage.removeItem('urbgo_session_active');
+    localStorage.removeItem('arkgo_remember_me');
+    sessionStorage.removeItem('arkgo_session_active');
     setUser(null);
     setProfile(null);
   }

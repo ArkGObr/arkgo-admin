@@ -38,8 +38,8 @@ function createMotoboyIcon(isOnline) {
 }
 
 export default function LiveMap() {
-  const { data: motoboys, refetch: refetchMotoboys } = useSupabase('motoboys', {
-    select: '*, users!motoboys_id_fkey(name, phone)',
+  const { data: Motoboy, refetch: refetchMotoboy } = useSupabase('Motoboy', {
+    select: '*, users!Motoboy_id_fkey(name, phone)',
   });
 
   const { data: activeDeliveries, refetch: refetchDeliveries } = useSupabase('deliveries', {
@@ -53,8 +53,8 @@ export default function LiveMap() {
     ],
   });
 
-  useRealtime('motoboys', {
-    onUpdate: () => refetchMotoboys(),
+  useRealtime('Motoboy', {
+    onUpdate: () => refetchMotoboy(),
   });
 
   useRealtime('deliveries', {
@@ -62,10 +62,10 @@ export default function LiveMap() {
     onUpdate: () => refetchDeliveries(),
   });
 
-  const motoboyList = (motoboys || []).filter(
+  const motoboyList = (Motoboy || []).filter(
     m => m.current_lat && m.current_lng
   );
-  const onlineCount = (motoboys || []).filter(m => m.is_online).length;
+  const onlineCount = (Motoboy || []).filter(m => m.is_online).length;
 
   // Default center: Goiânia, GO
   const center = [-16.6869, -49.2648];
@@ -100,7 +100,7 @@ export default function LiveMap() {
             url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           />
 
-          {/* Motoboys */}
+          {/* Motoboy */}
           {motoboyList.map(m => (
             <Marker
               key={m.id}

@@ -1,13 +1,57 @@
+import { useParams } from 'react-router-dom';
 import DataTable from '../components/ui/DataTable';
 import Badge from '../components/ui/Badge';
 import { useSupabase } from '../hooks/useSupabase';
 import { useRealtime } from '../hooks/useRealtime';
 import { formatCurrency } from '../utils/formatCurrency';
-import { VEHICLE_CATEGORIES } from '../utils/constants';
 
-export default function Motoboy() {
+/**
+ * Maps URL :category param to database vehicle_category value and display config.
+ */
+const CATEGORY_CONFIG = {
+  motoboy: {
+    label: 'Motoboy',
+    subtitle: 'Entregadores de moto cadastrados e seus status em tempo real',
+    dbValue: 'motoboy',
+  },
+  bikeboy: {
+    label: 'Bikeboy',
+    subtitle: 'Entregadores de bicicleta cadastrados e seus status em tempo real',
+    dbValue: 'bike',
+  },
+  mototaxi: {
+    label: 'Mototáxi',
+    subtitle: 'Motoristas de mototáxi cadastrados e seus status em tempo real',
+    dbValue: 'mototaxi',
+  },
+  car: {
+    label: 'Carros',
+    subtitle: 'Motoristas de carro cadastrados e seus status em tempo real',
+    dbValue: 'car',
+  },
+  van: {
+    label: 'Utilitários',
+    subtitle: 'Motoristas de utilitário cadastrados e seus status em tempo real',
+    dbValue: 'van',
+  },
+  truck: {
+    label: 'Caminhões',
+    subtitle: 'Motoristas de caminhão cadastrados e seus status em tempo real',
+    dbValue: 'truck',
+  },
+};
+
+export default function Drivers() {
+  const { category } = useParams();
+  const config = CATEGORY_CONFIG[category] ?? {
+    label: 'Entregadores',
+    subtitle: 'Lista de entregadores',
+    dbValue: category,
+  };
+
   const { data, loading, refetch } = useSupabase('Motoboy', {
     select: '*, users!Motoboy_id_fkey(name, phone, email, status)',
+    filters: [{ column: 'vehicle_category', operator: 'eq', value: config.dbValue }],
     order: { column: 'updated_at', ascending: false },
   });
 
@@ -32,7 +76,7 @@ export default function Motoboy() {
     {
       key: 'is_online',
       label: 'Status',
-      width: '120px',
+      width: '130px',
       render: row => (
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <span
@@ -44,24 +88,16 @@ export default function Motoboy() {
               animation: row.is_online ? 'pulse 2s ease-in-out infinite' : 'none',
             }}
           />
-          <span style={{ color: row.is_online ? 'var(--success)' : 'var(--text-tertiary)', fontWeight: 600, fontSize: 12 }}>
+          <span style={{
+            color: row.is_online ? 'var(--success)' : 'var(--text-tertiary)',
+            fontWeight: 600,
+            fontSize: 12,
+          }}>
             {row.is_online ? 'Online' : 'Offline'}
           </span>
         </div>
       ),
       sortKey: row => (row.is_online ? 1 : 0),
-    },
-    {
-      key: 'vehicle_category',
-      label: 'Veículo',
-      render: row => (
-        <Badge
-          label={VEHICLE_CATEGORIES[row.vehicle_category] || row.vehicle_category || '—'}
-          color="var(--text-secondary)"
-          bg="rgba(170,170,170,0.08)"
-          border="rgba(170,170,170,0.15)"
-        />
-      ),
     },
     {
       key: 'vehicle_plate',
@@ -88,8 +124,8 @@ export default function Motoboy() {
         <Badge
           label={row.users?.status === 'active' ? 'Ativo' : 'Inativo'}
           color={row.users?.status === 'active' ? 'var(--success)' : 'var(--error)'}
-          bg={row.users?.status === 'active' ? 'rgba(153,235,9,0.1)' : 'rgba(255,59,59,0.1)'}
-          border={row.users?.status === 'active' ? 'rgba(153,235,9,0.2)' : 'rgba(255,59,59,0.2)'}
+          bg={row.users?.status === 'active' ? 'rgba(102,235,0,0.1)' : 'rgba(255,59,59,0.1)'}
+          border={row.users?.status === 'active' ? 'rgba(102,235,0,0.2)' : 'rgba(255,59,59,0.2)'}
         />
       ),
     },
@@ -99,8 +135,8 @@ export default function Motoboy() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Motoboy</h1>
-          <p className="page-subtitle">Entregadores cadastrados e seus status em tempo real</p>
+          <h1 className="page-title">{config.label}</h1>
+          <p className="page-subtitle">{config.subtitle}</p>
         </div>
       </div>
 
@@ -110,7 +146,7 @@ export default function Motoboy() {
         loading={loading}
         searchKeys={['users.name', 'users.phone', 'vehicle_plate', 'vehicle_model']}
         searchPlaceholder="Buscar por nome, telefone ou placa..."
-        emptyMessage="Nenhum motoboy encontrado"
+        emptyMessage={`Nenhum(a) ${config.label.toLowerCase()} encontrado(a)`}
       />
     </div>
   );

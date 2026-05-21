@@ -14,8 +14,8 @@ export function useDashboardStats() {
     totalRevenue: 0,
     totalCommission: 0,
     totalClients: 0,
-    totalMotoboys: 0,
-    onlineMotoboys: 0,
+    totalMotoboy: 0,
+    onlineMotoboy: 0,
     totalRecharges: 0,
     pendingRecharges: 0,
     avgTicket: 0,
@@ -37,7 +37,7 @@ export function useDashboardStats() {
         deliveriesTodayRes,
         completedRes,
         clientsRes,
-        motoboysRes,
+        MotoboyRes,
         onlineRes,
         rechargesRes,
         pendingRechargesRes,
@@ -47,7 +47,7 @@ export function useDashboardStats() {
         supabase.from('deliveries').select('value, commission').eq('status', 'completed'),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'client'),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'motoboy'),
-        supabase.from('motoboys').select('id', { count: 'exact' }).eq('is_online', true),
+        supabase.from('Motoboy').select('id', { count: 'exact' }).eq('is_online', true),
         supabase.from('recharges').select('amount').eq('gateway_status', 'confirmed'),
         supabase.from('recharges').select('id', { count: 'exact' }).eq('gateway_status', 'pending'),
       ]);
@@ -59,7 +59,7 @@ export function useDashboardStats() {
       const totalRevenue = completed.reduce((sum, d) => sum + (d.value || 0), 0);
       const totalCommission = completed.reduce((sum, d) => sum + (d.commission || 0), 0);
       const totalRecharges = rechargesData.reduce((sum, r) => sum + (r.amount || 0), 0);
-      
+
       const active = allDeliveries.filter(
         d => ['pending', 'accepted', 'in_progress'].includes(d.status)
       ).length;
@@ -74,8 +74,8 @@ export function useDashboardStats() {
         totalRevenue,
         totalCommission,
         totalClients: clientsRes.count || 0,
-        totalMotoboys: motoboysRes.count || 0,
-        onlineMotoboys: onlineRes.count || 0,
+        totalMotoboy: MotoboyRes.count || 0,
+        onlineMotoboy: onlineRes.count || 0,
         totalRecharges,
         pendingRecharges: pendingRechargesRes.count || 0,
         avgTicket: completed.length > 0 ? totalRevenue / completed.length : 0,
