@@ -5,13 +5,13 @@ import { useRealtime } from '../hooks/useRealtime';
 import { formatCurrency } from '../utils/formatCurrency';
 import { VEHICLE_CATEGORIES } from '../utils/constants';
 
-export default function Motoboys() {
-  const { data, loading, refetch } = useSupabase('motoboys', {
-    select: '*, users!motoboys_id_fkey(name, phone, email, status)',
+export default function Motoboy() {
+  const { data, loading, refetch } = useSupabase('Motoboy', {
+    select: '*, users!Motoboy_id_fkey(name, phone, email, status)',
     order: { column: 'updated_at', ascending: false },
   });
 
-  useRealtime('motoboys', {
+  useRealtime('Motoboy', {
     onUpdate: () => refetch(),
   });
 
@@ -99,7 +99,7 @@ export default function Motoboys() {
     <div>
       <div className="page-header">
         <div>
-          <h1 className="page-title">Motoboys</h1>
+          <h1 className="page-title">Motoboy</h1>
           <p className="page-subtitle">Entregadores cadastrados e seus status em tempo real</p>
         </div>
       </div>

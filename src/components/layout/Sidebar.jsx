@@ -24,12 +24,12 @@ const NAV_ITEMS = [
   { section: 'Gestão' },
   { path: '/users', label: 'Clientes', icon: Users },
   { subsection: 'Entregadores' },
-  { path: '/drivers/motoboy',  label: 'Motoboys',    icon: Bike,    sub: true },
-  { path: '/drivers/bikeboy',  label: 'Bikeboys',    icon: Bike,    sub: true },
-  { path: '/drivers/mototaxi', label: 'Mototáxi',    icon: Zap,     sub: true },
-  { path: '/drivers/car',      label: 'Carro',        icon: Car,     sub: true },
-  { path: '/drivers/van',      label: 'Utilitário',   icon: Truck,   sub: true },
-  { path: '/drivers/truck',    label: 'Caminhão',     icon: Package, sub: true },
+  { path: '/drivers/motoboy', label: 'Motoboy', icon: Bike, sub: true },
+  { path: '/drivers/bikeboy', label: 'Bikeboy', icon: Bike, sub: true },
+  { path: '/drivers/mototaxi', label: 'Mototáxi', icon: Zap, sub: true },
+  { path: '/drivers/car', label: 'Carro', icon: Car, sub: true },
+  { path: '/drivers/van', label: 'Utilitário', icon: Truck, sub: true },
+  { path: '/drivers/truck', label: 'Caminhão', icon: Package, sub: true },
   { section: 'Financeiro' },
   { path: '/transactions', label: 'Transações', icon: ArrowLeftRight },
   { path: '/recharges', label: 'Recargas', icon: RefreshCw },
@@ -47,8 +47,8 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Logo */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-mark" style={{ background: 'transparent' }}>
-          <img src="/logo.png" alt="ArkGo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} />
+        <div className="sidebar-logo-mark">
+          <img src="/favicon.png" alt="ArkGo" className="sidebar-favicon-img" />
         </div>
         <div className="sidebar-logo-text">
           <h1>ArkGo</h1>

@@ -81,7 +81,7 @@ export default function Dashboard() {
     onUpdate: () => { refetch(); refetchRecent(); },
   });
 
-  useRealtime('motoboys', {
+  useRealtime('Motoboy', {
     onUpdate: () => refetch(),
   });
 
@@ -163,11 +163,11 @@ export default function Dashboard() {
           delay={200}
         />
         <StatCard
-          label="Motoboys Online"
-          value={stats.onlineMotoboys}
+          label="Motoboy Online"
+          value={stats.onlineMotoboy}
           icon={Wifi}
           color="var(--success)"
-          sub={`de ${stats.totalMotoboys} cadastrados`}
+          sub={`de ${stats.totalMotoboy} cadastrados`}
           delay={250}
         />
         <StatCard

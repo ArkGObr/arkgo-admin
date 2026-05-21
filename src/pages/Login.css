@@ -19,21 +19,20 @@
 }
 
 .login-logo {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-md);
-  background: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 90px;
+  height: 90px;
+  border-radius: 22px;
+  overflow: hidden;
   margin: 0 auto var(--space-xl);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
 }
 
-.login-logo span {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-size: 24px;
-  color: var(--text-inverse);
+.login-favicon-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  pointer-events: none;
 }
 
 .login-title {

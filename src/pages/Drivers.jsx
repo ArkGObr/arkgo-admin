@@ -10,12 +10,12 @@ import { formatCurrency } from '../utils/formatCurrency';
  */
 const CATEGORY_CONFIG = {
   motoboy: {
-    label: 'Motoboys',
+    label: 'Motoboy',
     subtitle: 'Entregadores de moto cadastrados e seus status em tempo real',
     dbValue: 'motoboy',
   },
   bikeboy: {
-    label: 'Bikeboys',
+    label: 'Bikeboy',
     subtitle: 'Entregadores de bicicleta cadastrados e seus status em tempo real',
     dbValue: 'bike',
   },
@@ -49,13 +49,13 @@ export default function Drivers() {
     dbValue: category,
   };
 
-  const { data, loading, refetch } = useSupabase('motoboys', {
-    select: '*, users!motoboys_id_fkey(name, phone, email, status)',
+  const { data, loading, refetch } = useSupabase('Motoboy', {
+    select: '*, users!Motoboy_id_fkey(name, phone, email, status)',
     filters: [{ column: 'vehicle_category', operator: 'eq', value: config.dbValue }],
     order: { column: 'updated_at', ascending: false },
   });
 
-  useRealtime('motoboys', {
+  useRealtime('Motoboy', {
     onUpdate: () => refetch(),
   });
 
