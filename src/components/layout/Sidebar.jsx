@@ -39,10 +39,10 @@ export default function Sidebar() {
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-mark" style={{ background: 'transparent' }}>
-          <img src="/icon.png" alt="UrbGo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} />
+          <img src="/logo.png" alt="ArkGo" style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: 'inherit' }} />
         </div>
         <div className="sidebar-logo-text">
-          <h1>UrbGo</h1>
+          <h1>ArkGo</h1>
           <span>Admin Panel</span>
         </div>
       </div>

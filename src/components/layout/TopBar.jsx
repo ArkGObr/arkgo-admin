@@ -21,7 +21,7 @@ export default function TopBar() {
     <header className="topbar">
       <div className="topbar-left">
         <div className="topbar-breadcrumb">
-          <span>UrbGo Admin</span>
+          <span>ArkGo Admin</span>
           <span style={{ color: 'var(--text-tertiary)' }}>/</span>
           <strong>{title}</strong>
         </div>
