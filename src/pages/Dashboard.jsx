@@ -263,41 +263,43 @@ export default function Dashboard() {
         <div className="recent-table-header">
           <h3 className="recent-table-title">Entregas Recentes</h3>
         </div>
-        <table className="data-table" style={{ fontSize: 13 }}>
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Cliente</th>
-              <th>Origem</th>
-              <th>Destino</th>
-              <th>Valor</th>
-              <th>Quando</th>
-            </tr>
-          </thead>
-          <tbody>
-            {(recentDeliveries || []).map(d => (
-              <tr key={d.id}>
-                <td><Badge status={d.status} /></td>
-                <td className="text-primary">{d.users?.name || '—'}</td>
-                <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {d.pickup_address}
-                </td>
-                <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {d.delivery_address}
-                </td>
-                <td className="text-numeric">{formatCurrency(d.value)}</td>
-                <td>{formatRelative(d.created_at)}</td>
-              </tr>
-            ))}
-            {(!recentDeliveries || recentDeliveries.length === 0) && (
+        <div className="data-table-scroll">
+          <table className="data-table" style={{ fontSize: 13 }}>
+            <thead>
               <tr>
-                <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-tertiary)' }}>
-                  Nenhuma entrega encontrada
-                </td>
+                <th>Status</th>
+                <th>Cliente</th>
+                <th>Origem</th>
+                <th>Destino</th>
+                <th>Valor</th>
+                <th>Quando</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {(recentDeliveries || []).map(d => (
+                <tr key={d.id}>
+                  <td><Badge status={d.status} /></td>
+                  <td className="text-primary">{d.users?.name || '—'}</td>
+                  <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {d.pickup_address}
+                  </td>
+                  <td style={{ maxWidth: 160, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {d.delivery_address}
+                  </td>
+                  <td className="text-numeric">{formatCurrency(d.value)}</td>
+                  <td>{formatRelative(d.created_at)}</td>
+                </tr>
+              ))}
+              {(!recentDeliveries || recentDeliveries.length === 0) && (
+                <tr>
+                  <td colSpan={6} style={{ textAlign: 'center', padding: 32, color: 'var(--text-tertiary)' }}>
+                    Nenhuma entrega encontrada
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </Card>
     </div>
   );

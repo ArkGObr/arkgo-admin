@@ -13,6 +13,7 @@ import Pricing from './pages/Pricing';
 import LiveMap from './pages/LiveMap';
 import DocumentReviews from './pages/DocumentReviews';
 import LandingLeads from './pages/LandingLeads';
+import Settings from './pages/Settings';
 import { PageSpinner } from './components/ui/Spinner';
 import './design/global.css';
 import './components/ui/Button.css';
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="map" element={<LiveMap />} />
             <Route path="documents" element={<DocumentReviews />} />
             <Route path="landing-leads" element={<LandingLeads />} />
+            <Route path="settings" element={<Settings />} />
           </Route>
 
           {/* Catch-all */}

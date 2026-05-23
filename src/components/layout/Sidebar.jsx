@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { useLocation, NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
   Truck,
@@ -14,6 +14,8 @@ import {
   Package,
   FileSearch,
   ClipboardList,
+  Settings,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
@@ -38,9 +40,11 @@ const NAV_ITEMS = [
   { path: '/transactions', label: 'Transações', icon: ArrowLeftRight },
   { path: '/recharges', label: 'Recargas', icon: RefreshCw },
   { path: '/pricing', label: 'Preços', icon: DollarSign },
+  { section: 'Sistema' },
+  { path: '/settings', label: 'Configurações', icon: Settings },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ open, onClose }) {
   const { profile, signOut } = useAuth();
 
   const initials = profile?.name
@@ -48,8 +52,8 @@ export default function Sidebar() {
     : 'AD';
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
+    <aside className={`sidebar ${open ? 'sidebar--open' : ''}`}>
+      {/* Logo + mobile close */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-mark">
           <img src="/favicon.png" alt="ArkGo" className="sidebar-favicon-img" />
@@ -58,6 +62,14 @@ export default function Sidebar() {
           <h1>ArkGo</h1>
           <span>Admin Panel</span>
         </div>
+        <button
+          className="sidebar-close-btn btn btn-ghost btn-icon btn-sm"
+          onClick={onClose}
+          title="Fechar menu"
+          aria-label="Fechar menu"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Navigation */}
@@ -83,6 +95,7 @@ export default function Sidebar() {
               key={item.path}
               to={item.path}
               end={item.path === '/'}
+              onClick={onClose}
               className={({ isActive }) =>
                 `sidebar-link ${item.sub ? 'sidebar-link--sub' : ''} ${isActive ? 'active' : ''}`
               }

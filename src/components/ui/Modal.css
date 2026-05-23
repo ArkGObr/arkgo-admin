@@ -64,3 +64,38 @@
   padding: var(--space-lg) var(--space-2xl);
   border-top: 1px solid var(--surface-border);
 }
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE — Mobile
+   ══════════════════════════════════════════════ */
+@media (max-width: 600px) {
+  .modal-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .modal {
+    max-width: 100%;
+    width: 100%;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 92vh;
+  }
+
+  .modal-header {
+    padding: var(--space-lg);
+  }
+
+  .modal-body {
+    padding: var(--space-lg);
+  }
+
+  .modal-footer {
+    padding: var(--space-md) var(--space-lg);
+    flex-direction: column-reverse;
+  }
+
+  .modal-footer > * {
+    width: 100%;
+    justify-content: center;
+  }
+}
