@@ -12,6 +12,8 @@ import {
   Car,
   Zap,
   Package,
+  FileSearch,
+  ClipboardList,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import './Sidebar.css';
@@ -23,6 +25,8 @@ const NAV_ITEMS = [
   { path: '/map', label: 'Mapa ao Vivo', icon: MapPin },
   { section: 'Gestão' },
   { path: '/users', label: 'Clientes', icon: Users },
+  { path: '/landing-leads', label: 'Fila da Landing', icon: ClipboardList },
+  { path: '/documents', label: 'Documentos IA', icon: FileSearch },
   { subsection: 'Entregadores' },
   { path: '/drivers/motoboy', label: 'Motoboy', icon: Bike, sub: true },
   { path: '/drivers/bikeboy', label: 'Bikeboy', icon: Bike, sub: true },
