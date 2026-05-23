@@ -1,0 +1,726 @@
+/* ═══════════════════════════════════════════════════
+   LandingLeads — Estilos específicos
+   ═══════════════════════════════════════════════════ */
+
+/* ── Custom Select ───────────────────────────────── */
+.ll-select {
+  position: relative;
+  user-select: none;
+}
+
+.ll-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-width: 190px;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.ll-select-trigger:hover,
+.ll-select-trigger.open {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.ll-select-chevron {
+  margin-left: auto;
+  color: var(--text-tertiary);
+  transition: transform var(--duration-fast);
+  flex-shrink: 0;
+}
+
+.ll-select-chevron.rotated {
+  transform: rotate(180deg);
+}
+
+.ll-select-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.ll-select-dot.empty {
+  background: var(--surface-border);
+}
+
+.ll-select-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 200;
+  animation: fadeSlideDown var(--duration-fast) var(--ease-out);
+}
+
+.ll-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+  font-family: var(--font-body);
+}
+
+.ll-select-option:hover {
+  background: var(--surface-high);
+  color: var(--text-primary);
+}
+
+.ll-select-option.active {
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── Modal Overlay ──────────────────────────────── */
+.ll-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  z-index: 200;
+  animation: fadeIn var(--duration-fast) var(--ease-out);
+}
+
+.ll-modal {
+  width: min(520px, 100vw);
+  height: 100%;
+  background: var(--surface);
+  border-left: 1px solid var(--surface-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: slideInRight var(--duration-normal) var(--ease-out);
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ── Modal Header ───────────────────────────────── */
+.ll-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--surface-border);
+  background: var(--surface-high);
+  flex-shrink: 0;
+}
+
+.ll-modal-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.ll-modal-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ll-modal-sub {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.ll-modal-close {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  color: var(--text-tertiary);
+  transition: all var(--duration-fast);
+  flex-shrink: 0;
+}
+
+.ll-modal-close:hover {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+
+/* ── Modal Body ─────────────────────────────────── */
+.ll-modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Meta grid ──────────────────────────────────── */
+.ll-meta-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.ll-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ll-meta-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+}
+
+.ll-meta-value {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.ll-meta-link {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 500;
+  text-decoration: none;
+  word-break: break-all;
+}
+
+.ll-meta-link:hover {
+  text-decoration: underline;
+}
+
+/* ── Section ────────────────────────────────────── */
+.ll-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ll-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-tertiary);
+}
+
+.ll-message-box {
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Filters Grouping ────────────────────────────── */
+.ll-filters-group {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.ll-filter-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ll-filter-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  letter-spacing: 0.5px;
+}
+
+/* ── Modal Header Action Buttons ─────────────────── */
+.ll-modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.ll-modal-action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--surface-border);
+  color: var(--text-tertiary);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ll-modal-action-btn:hover {
+  background: var(--surface-high);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* Delete button special hover and animation */
+.ll-modal-action-btn.delete {
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ll-modal-action-btn.delete:hover {
+  color: #fff !important;
+  background: #ff3b3b !important;
+  border-color: #ff3b3b !important;
+  box-shadow: 0 0 12px rgba(255, 59, 59, 0.4);
+  transform: scale(1.08) rotate(-3deg);
+}
+
+.ll-modal-action-btn.delete:active {
+  transform: scale(0.95);
+}
+
+/* Table inline action delete button */
+.ops-action-btn.delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  border: 1px solid transparent;
+  color: var(--text-tertiary);
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ops-action-btn.delete:hover {
+  color: #ff3b3b;
+  background: rgba(255, 59, 59, 0.1);
+  border-color: rgba(255, 59, 59, 0.2);
+  box-shadow: 0 0 8px rgba(255, 59, 59, 0.2);
+  transform: scale(1.08) rotate(3deg);
+}
+
+.ops-action-btn.delete:active {
+  transform: scale(0.95);
+}
+
+/* ── Inline Edit Mode ────────────────────────────── */
+.ll-modal-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ll-edit-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-body);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ll-edit-btn.cancel {
+  background: transparent;
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+}
+
+.ll-edit-btn.cancel:hover {
+  background: var(--surface-high);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+.ll-edit-btn.save {
+  background: var(--primary);
+  border: 1px solid var(--primary);
+  color: #fff;
+}
+
+.ll-edit-btn.save:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+  box-shadow: 0 0 8px var(--primary-glow);
+}
+
+.ll-edit-fields-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.ll-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ll-edit-field.full-width {
+  grid-column: span 2;
+}
+
+.ll-edit-input {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-body);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ll-edit-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+  outline: none;
+}
+
+.ll-edit-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: var(--font-body);
+  resize: vertical;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ll-edit-textarea:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+  outline: none;
+}
+
+/* ── Modal Status Select ────────────────────────── */
+.ll-modal-status-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ll-modal-status-select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.ll-modal-status-select-trigger {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--duration-fast);
+}
+
+.ll-modal-status-select-trigger:hover,
+.ll-modal-status-select-trigger.open {
+  border-color: var(--primary);
+  background: var(--surface-high);
+}
+
+.ll-modal-status-label {
+  flex-grow: 1;
+}
+
+.ll-modal-status-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  z-index: 210;
+  animation: fadeSlideDown var(--duration-fast) var(--ease-out);
+}
+
+.ll-modal-status-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  transition: all var(--duration-fast);
+  font-family: var(--font-body);
+}
+
+.ll-modal-status-option:hover {
+  background: var(--surface-high);
+  color: var(--text-primary);
+}
+
+.ll-modal-status-option.active {
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── Confirm Delete Overlay ──────────────────────── */
+.ll-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  animation: fadeIn var(--duration-fast) var(--ease-out);
+}
+
+.ll-confirm {
+  width: min(400px, 90vw);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+  animation: scaleIn var(--duration-fast) var(--ease-out);
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.92); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+.ll-confirm-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(255, 59, 59, 0.1);
+  color: #ff3b3b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px auto;
+  border: 1px solid rgba(255, 59, 59, 0.2);
+  box-shadow: 0 0 12px rgba(255, 59, 59, 0.1);
+}
+
+.ll-confirm-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.ll-confirm-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.ll-confirm-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.ll-confirm-actions button {
+  flex: 1;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ll-confirm-cancel {
+  background: transparent;
+  border: 1px solid var(--surface-border);
+  color: var(--text-secondary);
+}
+
+.ll-confirm-cancel:hover:not(:disabled) {
+  background: var(--surface-high);
+  color: var(--text-primary);
+}
+
+.ll-confirm-delete {
+  background: #ff3b3b;
+  border: 1px solid #ff3b3b;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.ll-confirm-delete:hover:not(:disabled) {
+  background: #e02f2f;
+  border-color: #e02f2f;
+  box-shadow: 0 0 12px rgba(255, 59, 59, 0.3);
+}
+
+.ll-confirm-delete:disabled,
+.ll-confirm-cancel:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Spinner helper for status/deletes */
+@keyframes ops-spin {
+  to { transform: rotate(360deg); }
+}
+
+.ops-spinner {
+  animation: ops-spin 1s linear infinite;
+}
+
+/* ── Inline Table Status Switcher ───────────────── */
+.ll-table-select {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ll-table-select.open {
+  z-index: 230;
+}
+
+.ll-table-select-trigger {
+  display: flex;
+  align-items: center;
+}
+
+.ll-table-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 220;
+  min-width: 145px;
+  margin-top: 6px;
+  animation: fadeSlideDown var(--duration-fast) var(--ease-out);
+}
+
+/* Permitir que o dropdown passe para fora da tabela e evitar travadas de renderização */
+.data-table-wrapper {
+  overflow: visible !important;
+}
+
+.data-table-wrapper > div {
+  overflow: visible !important;
+}
+
+
+
+.ll-table-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  transition: all var(--duration-fast);
+  font-family: var(--font-body);
+}
+
+.ll-table-select-option:hover {
+  background: var(--surface-high);
+  color: var(--text-primary);
+}
+
+.ll-table-select-option.active {
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── Modal Status Row ───────────────────────────── */
+.ll-modal-status-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100%;
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+

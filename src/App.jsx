@@ -11,6 +11,8 @@ import Transactions from './pages/Transactions';
 import Recharges from './pages/Recharges';
 import Pricing from './pages/Pricing';
 import LiveMap from './pages/LiveMap';
+import DocumentReviews from './pages/DocumentReviews';
+import LandingLeads from './pages/LandingLeads';
 import { PageSpinner } from './components/ui/Spinner';
 import './design/global.css';
 import './components/ui/Button.css';
@@ -69,6 +71,8 @@ export default function App() {
             <Route path="recharges" element={<Recharges />} />
             <Route path="pricing" element={<Pricing />} />
             <Route path="map" element={<LiveMap />} />
+            <Route path="documents" element={<DocumentReviews />} />
+            <Route path="landing-leads" element={<LandingLeads />} />
           </Route>
 
           {/* Catch-all */}

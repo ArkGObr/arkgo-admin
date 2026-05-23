@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Lock, Mail } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -13,8 +12,8 @@ export default function Login() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
-  const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -23,16 +22,19 @@ export default function Login() {
 
     try {
       await signIn(email, password, rememberMe);
-      navigate('/', { replace: true });
+      // Não navegamos manualmente aqui.
+      // O PublicRoute detecta que user+profile estão prontos
+      // e redireciona automaticamente para '/', evitando a condição de corrida.
     } catch (err) {
       if (err.message?.includes('Invalid login')) {
         setError('Email ou senha inválidos.');
       } else {
         setError(err.message || 'Erro ao fazer login.');
       }
-    } finally {
       setLoading(false);
     }
+    // Nota: não chamamos setLoading(false) no finally quando o login
+    // é bem-sucedido, pois o componente será desmontado pelo redirecionamento.
   }
 
   return (
@@ -65,14 +67,25 @@ export default function Login() {
               autoFocus
             />
 
-            <Input
-              label="Senha"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-            />
+            <div className="login-password-field">
+              <Input
+                label="Senha"
+                type={showPassword ? 'text' : 'password'}
+                placeholder="********"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="login-password-toggle"
+                onClick={() => setShowPassword(prev => !prev)}
+                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
 
             <label className="login-checkbox">
               <input
