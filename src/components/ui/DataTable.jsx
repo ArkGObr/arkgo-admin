@@ -87,7 +87,7 @@ export default function DataTable({
         </div>
       </div>
 
-      <div style={{ overflowX: 'auto' }}>
+      <div className="data-table-scroll">
         <table className="data-table">
           <thead>
             <tr>

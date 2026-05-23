@@ -40,4 +40,37 @@
   gap: var(--space-md);
 }
 
+/* Hamburger — hidden on desktop, shown on mobile */
+.topbar-hamburger {
+  display: none;
+}
 
+/* ══════════════════════════════════════════════
+   RESPONSIVE — Mobile
+   ══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .topbar {
+    left: 0;
+    padding: 0 var(--space-lg);
+  }
+
+  .topbar-hamburger {
+    display: flex;
+  }
+
+  .topbar-breadcrumb {
+    font-size: 13px;
+  }
+
+  /* Hide "ArkGo Admin /" on very small screens */
+  .topbar-breadcrumb > span:first-child,
+  .topbar-breadcrumb > span:nth-child(2) {
+    display: none;
+  }
+}
+
+@media (max-width: 380px) {
+  .topbar {
+    padding: 0 var(--space-md);
+  }
+}

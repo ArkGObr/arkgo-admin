@@ -10,6 +10,7 @@
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
   padding: var(--space-xl);
+  contain: paint;
 }
 
 .chart-card-header {
@@ -47,5 +48,38 @@
 @media (max-width: 1200px) {
   .dashboard-charts {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ══════════════════════════════════════════════
+   RESPONSIVE — Mobile
+   ══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .dashboard-charts {
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+  }
+
+  .chart-card {
+    padding: var(--space-lg);
+  }
+
+  .chart-card-header {
+    margin-bottom: var(--space-md);
+  }
+
+  .recent-table-header {
+    margin-bottom: var(--space-md);
+  }
+
+  .recent-table-title {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .chart-card {
+    padding: var(--space-md);
   }
 }
