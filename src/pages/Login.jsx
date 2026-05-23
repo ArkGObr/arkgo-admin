@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Eye, EyeOff, Lock } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { Input } from '../components/ui/Input';
@@ -15,7 +14,6 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { signIn } = useAuth();
-  const navigate = useNavigate();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -24,16 +22,19 @@ export default function Login() {
 
     try {
       await signIn(email, password, rememberMe);
-      navigate('/', { replace: true });
+      // Não navegamos manualmente aqui.
+      // O PublicRoute detecta que user+profile estão prontos
+      // e redireciona automaticamente para '/', evitando a condição de corrida.
     } catch (err) {
       if (err.message?.includes('Invalid login')) {
         setError('Email ou senha inválidos.');
       } else {
         setError(err.message || 'Erro ao fazer login.');
       }
-    } finally {
       setLoading(false);
     }
+    // Nota: não chamamos setLoading(false) no finally quando o login
+    // é bem-sucedido, pois o componente será desmontado pelo redirecionamento.
   }
 
   return (
@@ -78,7 +79,7 @@ export default function Login() {
               <button
                 type="button"
                 className="login-password-toggle"
-                onClick={() => setShowPassword(value => !value)}
+                onClick={() => setShowPassword(prev => !prev)}
                 aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
                 title={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
               >
