@@ -493,6 +493,8 @@ export default function DocumentReviews() {
   const [runningId, setRunningId]       = useState('');
   const [actionError, setActionError]   = useState('');
   const [selectedRow, setSelectedRow]   = useState(null);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
+  const [deleteLoading, setDeleteLoading]   = useState(false);
 
   const filters = [];
   if (statusFilter) filters.push({ column: 'status', operator: 'eq', value: statusFilter });
@@ -619,11 +621,9 @@ export default function DocumentReviews() {
           <button
             className="ops-action-btn delete"
             title="Apagar"
-            onClick={async e => {
+            onClick={e => {
               e.stopPropagation();
-              if (window.confirm('Apagar este registro permanentemente?')) {
-                await deleteRow(row.id);
-              }
+              setDeleteTargetId(row.id);
             }}
           >
             <Trash2 size={14} />
@@ -676,6 +676,24 @@ export default function DocumentReviews() {
           onDelete={deleteRow}
           onSaveExtracted={saveExtracted}
           runningId={runningId}
+        />
+      )}
+
+      {deleteTargetId && (
+        <ConfirmDelete
+          onConfirm={async () => {
+            setDeleteLoading(true);
+            try {
+              await deleteRow(deleteTargetId);
+              setDeleteTargetId(null);
+            } catch (err) {
+              setActionError(err.message || 'Erro ao excluir.');
+            } finally {
+              setDeleteLoading(false);
+            }
+          }}
+          onCancel={() => setDeleteTargetId(null)}
+          loading={deleteLoading}
         />
       )}
     </div>

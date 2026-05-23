@@ -40,23 +40,4 @@
   gap: var(--space-md);
 }
 
-.topbar-live {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  background: rgba(153, 235, 9, 0.08);
-  border: 1px solid rgba(153, 235, 9, 0.2);
-  border-radius: var(--radius-full);
-  padding: 5px 14px;
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--primary);
-}
 
-.topbar-live-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--primary);
-  animation: pulse 2s ease-in-out infinite;
-}
