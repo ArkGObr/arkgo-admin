@@ -62,7 +62,7 @@
 
 /* Close button — only on mobile */
 .sidebar-close-btn {
-  display: none;
+  display: none !important;
   margin-left: auto;
   flex-shrink: 0;
 }
@@ -217,7 +217,7 @@
   }
 
   .sidebar-close-btn {
-    display: flex;
+    display: flex !important;
   }
 
   .sidebar-link.active::before {
