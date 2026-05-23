@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Save, Zap, Moon, Sun, Settings2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { Save, Zap, Moon, Sun, Settings2, AlertTriangle, CheckCircle, ChevronDown, Minus, Plus, ArrowRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
 import './Settings.css';
@@ -35,12 +36,14 @@ function Toast({ type, msg, onClose }) {
   useEffect(() => {
     const t = setTimeout(onClose, 3500);
     return () => clearTimeout(t);
-  }, [onClose]);
-  return (
+  }, [onClose, msg]);
+
+  return createPortal(
     <div className={`settings-toast settings-toast--${type}`}>
       {type === 'success' ? <CheckCircle size={16} /> : <AlertTriangle size={16} />}
       <span>{msg}</span>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -64,25 +67,147 @@ function Toggle({ checked, onChange, id }) {
 }
 
 /* ──────────────────────────────────────────────
-   Hour Picker
+   Hour Picker — custom dropdown (shp-*)
 ────────────────────────────────────────────── */
 function HourPicker({ label, value, onChange, disabled }) {
   const hours = Array.from({ length: 24 }, (_, i) => i);
+  const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const [coords, setCoords] = useState({ top: 0, left: 0, width: 0 });
+
+  const updateCoords = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setCoords({
+        top: rect.bottom + window.scrollY,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      updateCoords();
+      window.addEventListener('resize', updateCoords);
+      window.addEventListener('scroll', updateCoords, true);
+    }
+    return () => {
+      window.removeEventListener('resize', updateCoords);
+      window.removeEventListener('scroll', updateCoords, true);
+    };
+  }, [isOpen, updateCoords]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    function handleOutsideClick(e) {
+      const clickedPortal = e.target.closest('.shp-dropdown');
+      if (
+        triggerRef.current &&
+        !triggerRef.current.contains(e.target) &&
+        !clickedPortal
+      ) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, [isOpen]);
+
+  const activeHourStr = String(value);
+
   return (
-    <div className={`settings-hour-picker ${disabled ? 'settings-hour-picker--disabled' : ''}`}>
-      <span className="settings-hour-label">{label}</span>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
+    <div className={`shp-wrap ${disabled ? 'shp-wrap--disabled' : ''} ${isOpen ? 'shp-wrap--open' : ''}`}>
+      <span className="shp-label">{label}</span>
+      <button
+        ref={triggerRef}
+        type="button"
+        className="shp-trigger"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
-        className="settings-hour-select"
       >
-        {hours.map(h => (
-          <option key={h} value={h}>
-            {String(h).padStart(2, '0')}:00
-          </option>
-        ))}
-      </select>
+        <span className="shp-value">
+          {activeHourStr.padStart(2, '0')}:00
+        </span>
+        <ChevronDown className="shp-chevron" size={16} />
+      </button>
+
+      {isOpen && !disabled && createPortal(
+        <div
+          className="shp-dropdown"
+          style={{
+            position: 'absolute',
+            top: coords.top,
+            left: coords.left,
+            width: coords.width,
+            zIndex: 10000,
+          }}
+        >
+          <div className="shp-list">
+            {hours.map(h => {
+              const strH = String(h);
+              const isActive = activeHourStr === strH;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  className={`shp-option ${isActive ? 'shp-option--active' : ''}`}
+                  onClick={() => {
+                    onChange(strH);
+                    setIsOpen(false);
+                  }}
+                >
+                  {strH.padStart(2, '0')}:00
+                </button>
+              );
+            })}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
+}
+
+/* ──────────────────────────────────────────────
+   Percent Stepper — ＋/－ (pct-*)
+────────────────────────────────────────────── */
+function PercentStepper({ label, value, onChange, min = 0, max = 300, step = 5, icon: Icon }) {
+  const handleDecrement = () => {
+    onChange(Math.max(min, value - step));
+  };
+  const handleIncrement = () => {
+    onChange(Math.min(max, value + step));
+  };
+
+  return (
+    <div className="pct-field">
+      <span className="pct-label">
+        {Icon && <Icon size={12} />}
+        {label}
+      </span>
+      <div className="pct-stepper">
+        <button
+          type="button"
+          className="pct-btn pct-btn--minus"
+          onClick={handleDecrement}
+          disabled={value <= min}
+        >
+          <Minus size={14} />
+        </button>
+        <div className="pct-value">
+          <span>{value}</span>
+          <span className="pct-unit">%</span>
+        </div>
+        <button
+          type="button"
+          className="pct-btn pct-btn--plus"
+          onClick={handleIncrement}
+          disabled={value >= max}
+        >
+          <Plus size={14} />
+        </button>
+      </div>
     </div>
   );
 }
@@ -101,42 +226,18 @@ function VehicleMultiplierRow({ row, onChange }) {
         <span className="settings-vehicle-label">{row.name}</span>
       </div>
       <div className="settings-vehicle-inputs">
-        <div className="settings-vehicle-field">
-          <label>
-            <Sun size={12} /> Pico Diurno
-          </label>
-          <div className="settings-percent-input">
-            <input
-              type="number"
-              min={0}
-              max={300}
-              step={5}
-              value={peak}
-              onChange={e =>
-                onChange(row.id, 'peak_multiplier', Number(e.target.value) / 100)
-              }
-            />
-            <span>%</span>
-          </div>
-        </div>
-        <div className="settings-vehicle-field">
-          <label>
-            <Moon size={12} /> Pico Noturno
-          </label>
-          <div className="settings-percent-input">
-            <input
-              type="number"
-              min={0}
-              max={300}
-              step={5}
-              value={nightPeak}
-              onChange={e =>
-                onChange(row.id, 'night_peak_multiplier', Number(e.target.value) / 100)
-              }
-            />
-            <span>%</span>
-          </div>
-        </div>
+        <PercentStepper
+          label="Pico Diurno"
+          value={peak}
+          icon={Sun}
+          onChange={val => onChange(row.id, 'peak_multiplier', val / 100)}
+        />
+        <PercentStepper
+          label="Pico Noturno"
+          value={nightPeak}
+          icon={Moon}
+          onChange={val => onChange(row.id, 'night_peak_multiplier', val / 100)}
+        />
       </div>
     </div>
   );
@@ -146,8 +247,10 @@ function VehicleMultiplierRow({ row, onChange }) {
    Main Component
 ────────────────────────────────────────────── */
 export default function Settings() {
-  const [config, setConfig]     = useState({ ...DEFAULTS });
-  const [vehicles, setVehicles] = useState([]);
+  const [config, setConfig]           = useState({ ...DEFAULTS });
+  const [savedConfig, setSavedConfig] = useState({ ...DEFAULTS });
+  const [vehicles, setVehicles]       = useState([]);
+  const [savedVehicles, setSavedVehicles] = useState([]);
   const [loadingCfg, setLoadingCfg] = useState(true);
   const [loadingVeh, setLoadingVeh] = useState(true);
   const [savingCfg, setSavingCfg]   = useState(false);
@@ -174,6 +277,7 @@ export default function Settings() {
     const map = { ...DEFAULTS };
     (data || []).forEach(r => { map[r.key] = r.value; });
     setConfig(map);
+    setSavedConfig(map);
     setLoadingCfg(false);
   }, []);
 
@@ -185,7 +289,10 @@ export default function Settings() {
       .select('id, category, name, peak_multiplier, night_peak_multiplier, is_active')
       .order('category');
 
-    if (!error) setVehicles(data || []);
+    if (!error) {
+      setVehicles(data || []);
+      setSavedVehicles(JSON.parse(JSON.stringify(data || [])));
+    }
     setLoadingVeh(false);
   }, []);
 
@@ -211,6 +318,7 @@ export default function Settings() {
         .from('app_config')
         .upsert(upserts, { onConflict: 'key' });
       if (error) throw error;
+      setSavedConfig(config);
       showToast('success', 'Configurações de horário salvas!');
     } catch (err) {
       showToast('error', 'Erro ao salvar: ' + err.message);
@@ -233,6 +341,7 @@ export default function Settings() {
           .eq('id', v.id);
         if (error) throw error;
       }
+      setSavedVehicles(JSON.parse(JSON.stringify(vehicles)));
       showToast('success', 'Multiplicadores de pico salvos!');
     } catch (err) {
       showToast('error', 'Erro ao salvar: ' + err.message);
@@ -243,6 +352,16 @@ export default function Settings() {
 
   const peakActive      = toBool(config.peak_hours_active);
   const nightPeakActive = toBool(config.night_peak_hours_active);
+
+  const isConfigDirty = CONFIG_KEYS.some(key => config[key] !== savedConfig[key]);
+  const isVehiclesDirty = vehicles.some((v, idx) => {
+    const saved = savedVehicles.find(s => s.id === v.id);
+    if (!saved) return true;
+    return (
+      (v.peak_multiplier ?? 0.4) !== (saved.peak_multiplier ?? 0.4) ||
+      (v.night_peak_multiplier ?? 0.4) !== (saved.night_peak_multiplier ?? 0.4)
+    );
+  });
 
   /* ── DB not ready banner ── */
   if (dbError) {
@@ -273,10 +392,15 @@ INSERT INTO app_config (key, value, description) VALUES
 ON CONFLICT (key) DO NOTHING;
 
 ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public read app_config" ON app_config;
 CREATE POLICY "Public read app_config"
   ON app_config FOR SELECT USING (true);
-CREATE POLICY "Auth update app_config"
-  ON app_config FOR UPDATE USING (auth.role() = 'authenticated');`}</pre>
+
+DROP POLICY IF EXISTS "Auth update app_config" ON app_config;
+DROP POLICY IF EXISTS "Auth write app_config" ON app_config;
+CREATE POLICY "Auth write app_config"
+  ON app_config FOR ALL USING (auth.role() = 'authenticated');`}</pre>
         <Button onClick={() => { setDbError(false); loadConfig(); loadVehicles(); }}>
           Tentar novamente
         </Button>
@@ -324,7 +448,9 @@ CREATE POLICY "Auth update app_config"
                 onChange={v => setConfig(c => ({ ...c, peak_hours_start: v }))}
                 disabled={!peakActive}
               />
-              <span className="settings-hours-sep">→</span>
+              <div className="settings-hours-sep">
+                <ArrowRight size={18} />
+              </div>
               <HourPicker
                 label="Fim"
                 value={config.peak_hours_end}
@@ -360,7 +486,9 @@ CREATE POLICY "Auth update app_config"
                 onChange={v => setConfig(c => ({ ...c, night_peak_start: v }))}
                 disabled={!nightPeakActive}
               />
-              <span className="settings-hours-sep">→</span>
+              <div className="settings-hours-sep">
+                <ArrowRight size={18} />
+              </div>
               <HourPicker
                 label="Fim"
                 value={config.night_peak_end}
@@ -374,7 +502,12 @@ CREATE POLICY "Auth update app_config"
 
       {/* Save config button */}
       <div className="settings-save-row">
-        <Button icon={Save} loading={savingCfg || loadingCfg} onClick={saveConfig}>
+        <Button
+          icon={Save}
+          loading={savingCfg || loadingCfg}
+          onClick={saveConfig}
+          disabled={!isConfigDirty || savingCfg || loadingCfg}
+        >
           Salvar Horários
         </Button>
       </div>
@@ -416,7 +549,12 @@ CREATE POLICY "Auth update app_config"
         </div>
 
         <div className="settings-card-footer">
-          <Button icon={Save} loading={savingVeh || loadingVeh} onClick={saveVehicles}>
+          <Button
+            icon={Save}
+            loading={savingVeh || loadingVeh}
+            onClick={saveVehicles}
+            disabled={!isVehiclesDirty || savingVeh || loadingVeh}
+          >
             Salvar Multiplicadores
           </Button>
         </div>

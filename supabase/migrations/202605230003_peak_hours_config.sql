@@ -45,8 +45,11 @@ CREATE TRIGGER trg_app_config_updated_at
 -- 5. RLS — allow anon read, require auth for write
 ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Public read app_config" ON app_config;
 CREATE POLICY "Public read app_config"
   ON app_config FOR SELECT USING (true);
 
-CREATE POLICY "Auth update app_config"
-  ON app_config FOR UPDATE USING (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Auth update app_config" ON app_config;
+DROP POLICY IF EXISTS "Auth write app_config" ON app_config;
+CREATE POLICY "Auth write app_config"
+  ON app_config FOR ALL USING (auth.role() = 'authenticated');
