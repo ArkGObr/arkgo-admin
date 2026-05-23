@@ -6,9 +6,11 @@ import {
   FileSearch,
   FileText,
   Filter,
-  Image,
+  Pencil,
   Play,
   RefreshCw,
+  Save,
+  Trash2,
   UserCheck,
   X,
 } from 'lucide-react';
@@ -80,10 +82,7 @@ function StatusSelect({ value, onChange }) {
         onClick={() => setOpen(o => !o)}
       >
         {value && STATUS_META[value] && (
-          <span
-            className="dr-select-dot"
-            style={{ background: STATUS_META[value].color }}
-          />
+          <span className="dr-select-dot" style={{ background: STATUS_META[value].color }} />
         )}
         <span>{selected.label}</span>
         <ChevronDown size={14} className={`dr-select-chevron ${open ? 'rotated' : ''}`} />
@@ -101,14 +100,9 @@ function StatusSelect({ value, onChange }) {
                 className={`dr-select-option ${isActive ? 'active' : ''}`}
                 onClick={() => { onChange(opt.value); setOpen(false); }}
               >
-                {meta ? (
-                  <span
-                    className="dr-select-dot"
-                    style={{ background: meta.color }}
-                  />
-                ) : (
-                  <span className="dr-select-dot empty" />
-                )}
+                {meta
+                  ? <span className="dr-select-dot" style={{ background: meta.color }} />
+                  : <span className="dr-select-dot empty" />}
                 {opt.label}
               </button>
             );
@@ -119,23 +113,57 @@ function StatusSelect({ value, onChange }) {
   );
 }
 
+/* ─── Confirm Delete Dialog ────────────────────────────────── */
+function ConfirmDelete({ onConfirm, onCancel, loading }) {
+  return (
+    <div className="dr-confirm-overlay" onClick={onCancel}>
+      <div className="dr-confirm" onClick={e => e.stopPropagation()}>
+        <div className="dr-confirm-icon">
+          <Trash2 size={24} />
+        </div>
+        <h3 className="dr-confirm-title">Apagar registro?</h3>
+        <p className="dr-confirm-desc">
+          Esta ação é permanente e não pode ser desfeita. O registro será removido da fila de documentos.
+        </p>
+        <div className="dr-confirm-actions">
+          <button className="dr-confirm-cancel" onClick={onCancel} disabled={loading}>
+            Cancelar
+          </button>
+          <button className="dr-confirm-delete" onClick={onConfirm} disabled={loading}>
+            {loading ? <RefreshCw size={14} /> : <Trash2 size={14} />}
+            {loading ? 'Apagando...' : 'Apagar'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Document Detail Modal ────────────────────────────────── */
-function ReviewModal({ row, onClose, onReanalyze, runningId }) {
-  const [files, setFiles] = useState([]);
+function ReviewModal({ row, onClose, onReanalyze, onDelete, onSaveExtracted, runningId }) {
+  const [files, setFiles]               = useState([]);
   const [filesLoading, setFilesLoading] = useState(true);
-  const [filesError, setFilesError] = useState('');
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [filesError, setFilesError]     = useState('');
+  const [previewUrl, setPreviewUrl]     = useState(null);
+  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
+  const [deleteLoading, setDeleteLoading]         = useState(false);
 
-  const meta = STATUS_META[row.status] || STATUS_META.pending;
+  /* Edit mode for extracted_data */
+  const [editMode, setEditMode]   = useState(false);
+  const [editData, setEditData]   = useState({});
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError]   = useState('');
+
   const analysis = row.extracted_data;
+  const driverName    = row.users?.name || row.subject_name || '—';
+  const driverContact = row.users?.phone || row.users?.email || row.subject_document || '—';
 
-  /* Busca os arquivos do bucket para este review */
+  /* Load bucket files */
   useEffect(() => {
     async function loadFiles() {
       setFilesLoading(true);
       setFilesError('');
       try {
-        // Tenta buscar arquivos em pastas comuns: pelo user_id ou review id
         const paths = [
           row.user_id,
           row.id,
@@ -149,7 +177,6 @@ function ReviewModal({ row, onClose, onReanalyze, runningId }) {
             .from('documents')
             .list(prefix, { limit: 50 });
           if (!error && data?.length) {
-            // Gera URLs assinadas para cada arquivo
             const withUrls = await Promise.all(
               data
                 .filter(f => f.name && !f.name.endsWith('/'))
@@ -179,12 +206,58 @@ function ReviewModal({ row, onClose, onReanalyze, runningId }) {
     loadFiles();
   }, [row.id, row.user_id]);
 
-  const driverName = row.users?.name || row.subject_name || '—';
-  const driverContact = row.users?.phone || row.users?.email || row.subject_document || '—';
+  function startEdit() {
+    // Cria cópia rasa dos dados extraídos para edição
+    const copy = {};
+    if (analysis) {
+      Object.entries(analysis).forEach(([k, v]) => {
+        copy[k] = typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
+      });
+    }
+    setEditData(copy);
+    setEditMode(true);
+    setSaveError('');
+  }
+
+  function cancelEdit() {
+    setEditMode(false);
+    setEditData({});
+    setSaveError('');
+  }
+
+  async function handleSave() {
+    setSaveLoading(true);
+    setSaveError('');
+    try {
+      // Reconverte campos que parecem JSON de volta para objeto
+      const parsed = {};
+      Object.entries(editData).forEach(([k, v]) => {
+        try { parsed[k] = JSON.parse(v); } catch { parsed[k] = v; }
+      });
+      await onSaveExtracted(row.id, parsed);
+      setEditMode(false);
+    } catch (err) {
+      setSaveError(err.message || 'Erro ao salvar.');
+    } finally {
+      setSaveLoading(false);
+    }
+  }
+
+  async function handleDelete() {
+    setDeleteLoading(true);
+    try {
+      await onDelete(row.id);
+      onClose();
+    } catch {
+      setDeleteLoading(false);
+      setShowConfirmDelete(false);
+    }
+  }
 
   return (
     <div className="dr-modal-overlay" onClick={onClose}>
       <div className="dr-modal" onClick={e => e.stopPropagation()}>
+
         {/* Header */}
         <div className="dr-modal-header">
           <div className="dr-modal-header-info">
@@ -205,6 +278,13 @@ function ReviewModal({ row, onClose, onReanalyze, runningId }) {
               {runningId === row.id ? <RefreshCw size={14} /> : <Play size={14} />}
               {row.status === 'completed' ? 'Reanalisar' : 'Analisar'}
             </Button>
+            <button
+              className="dr-modal-action-btn delete"
+              onClick={() => setShowConfirmDelete(true)}
+              title="Apagar registro"
+            >
+              <Trash2 size={15} />
+            </button>
             <button className="dr-modal-close" onClick={onClose}>
               <X size={18} />
             </button>
@@ -240,29 +320,66 @@ function ReviewModal({ row, onClose, onReanalyze, runningId }) {
             )}
           </div>
 
-          {/* AI Analysis */}
+          {/* AI Analysis — view or edit */}
           {analysis && Object.keys(analysis).length > 0 && (
             <div className="dr-section">
               <div className="dr-section-title">
                 <UserCheck size={14} />
                 Dados Extraídos pela IA
-              </div>
-              <div className="dr-analysis-grid">
-                {Object.entries(analysis).map(([key, val]) => (
-                  <div key={key} className="dr-analysis-item">
-                    <span className="dr-analysis-label">
-                      {key.replace(/_/g, ' ')}
-                    </span>
-                    <span className="dr-analysis-value">
-                      {typeof val === 'object' ? JSON.stringify(val) : String(val ?? '—')}
-                    </span>
+                {!editMode ? (
+                  <button className="dr-edit-btn" onClick={startEdit} title="Editar dados">
+                    <Pencil size={12} />
+                    Editar
+                  </button>
+                ) : (
+                  <div className="dr-edit-actions">
+                    <button className="dr-edit-btn cancel" onClick={cancelEdit} disabled={saveLoading}>
+                      Cancelar
+                    </button>
+                    <button className="dr-edit-btn save" onClick={handleSave} disabled={saveLoading}>
+                      {saveLoading ? <RefreshCw size={12} /> : <Save size={12} />}
+                      Salvar
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
+
+              {saveError && (
+                <div className="dr-error-box" style={{ marginBottom: 8 }}>
+                  <AlertCircle size={14} />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
+              {editMode ? (
+                <div className="dr-edit-grid">
+                  {Object.entries(editData).map(([key]) => (
+                    <div key={key} className="dr-edit-field">
+                      <label className="dr-edit-label">{key.replace(/_/g, ' ')}</label>
+                      <input
+                        className="dr-edit-input"
+                        value={editData[key]}
+                        onChange={e => setEditData(prev => ({ ...prev, [key]: e.target.value }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="dr-analysis-grid">
+                  {Object.entries(analysis).map(([key, val]) => (
+                    <div key={key} className="dr-analysis-item">
+                      <span className="dr-analysis-label">{key.replace(/_/g, ' ')}</span>
+                      <span className="dr-analysis-value">
+                        {typeof val === 'object' ? JSON.stringify(val) : String(val ?? '—')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {/* AI Raw result / error */}
+          {/* AI Raw result */}
           {row.ai_result && (
             <div className="dr-section">
               <div className="dr-section-title">
@@ -323,9 +440,7 @@ function ReviewModal({ row, onClose, onReanalyze, runningId }) {
                       {file.isImage ? (
                         <img src={file.signedUrl} alt={file.name} />
                       ) : (
-                        <div className="dr-file-icon">
-                          <FileText size={28} />
-                        </div>
+                        <div className="dr-file-icon"><FileText size={28} /></div>
                       )}
                     </div>
                     <div className="dr-file-info">
@@ -337,13 +452,7 @@ function ReviewModal({ row, onClose, onReanalyze, runningId }) {
                       </span>
                     </div>
                     {file.signedUrl && (
-                      <a
-                        className="dr-file-open"
-                        href={file.signedUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        title="Abrir arquivo"
-                      >
+                      <a className="dr-file-open" href={file.signedUrl} target="_blank" rel="noreferrer">
                         <ExternalLink size={13} />
                         Abrir
                       </a>
@@ -358,15 +467,21 @@ function ReviewModal({ row, onClose, onReanalyze, runningId }) {
 
       {/* Image lightbox */}
       {previewUrl && (
-        <div
-          className="dr-lightbox"
-          onClick={e => { e.stopPropagation(); setPreviewUrl(null); }}
-        >
+        <div className="dr-lightbox" onClick={e => { e.stopPropagation(); setPreviewUrl(null); }}>
           <img src={previewUrl} alt="preview" onClick={e => e.stopPropagation()} />
           <button className="dr-lightbox-close" onClick={() => setPreviewUrl(null)}>
             <X size={20} />
           </button>
         </div>
+      )}
+
+      {/* Confirm delete */}
+      {showConfirmDelete && (
+        <ConfirmDelete
+          onConfirm={handleDelete}
+          onCancel={() => setShowConfirmDelete(false)}
+          loading={deleteLoading}
+        />
       )}
     </div>
   );
@@ -409,6 +524,26 @@ export default function DocumentReviews() {
     if (invokeError) setActionError(invokeError.message);
     await refetch();
     setRunningId('');
+  }
+
+  async function deleteRow(id) {
+    const { error: delError } = await supabase
+      .from('document_ai_reviews')
+      .delete()
+      .eq('id', id);
+    if (delError) throw new Error(delError.message);
+    await refetch();
+  }
+
+  async function saveExtracted(id, newData) {
+    const { error: updError } = await supabase
+      .from('document_ai_reviews')
+      .update({ extracted_data: newData })
+      .eq('id', id);
+    if (updError) throw new Error(updError.message);
+    await refetch();
+    // Atualiza a linha selecionada para refletir os novos dados
+    setSelectedRow(prev => prev ? { ...prev, extracted_data: newData } : null);
   }
 
   const columns = [
@@ -470,16 +605,30 @@ export default function DocumentReviews() {
       label: '',
       sortable: false,
       render: row => (
-        <Button
-          size="sm"
-          variant={row.status === 'completed' ? 'ghost' : 'primary'}
-          onClick={event => { event.stopPropagation(); runReview(row); }}
-          disabled={runningId === row.id || row.status === 'processing'}
-          title="Analisar documento"
-        >
-          {runningId === row.id ? <RefreshCw size={14} /> : <Play size={14} />}
-          {row.status === 'completed' ? 'Reanalisar' : 'Analisar'}
-        </Button>
+        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+          <Button
+            size="sm"
+            variant={row.status === 'completed' ? 'ghost' : 'primary'}
+            onClick={event => { event.stopPropagation(); runReview(row); }}
+            disabled={runningId === row.id || row.status === 'processing'}
+            title="Analisar documento"
+          >
+            {runningId === row.id ? <RefreshCw size={14} /> : <Play size={14} />}
+            {row.status === 'completed' ? 'Reanalisar' : 'Analisar'}
+          </Button>
+          <button
+            className="ops-action-btn delete"
+            title="Apagar"
+            onClick={async e => {
+              e.stopPropagation();
+              if (window.confirm('Apagar este registro permanentemente?')) {
+                await deleteRow(row.id);
+              }
+            }}
+          >
+            <Trash2 size={14} />
+          </button>
+        </div>
       ),
     },
   ];
@@ -524,6 +673,8 @@ export default function DocumentReviews() {
           row={selectedRow}
           onClose={() => setSelectedRow(null)}
           onReanalyze={async row => { await runReview(row); setSelectedRow(null); }}
+          onDelete={deleteRow}
+          onSaveExtracted={saveExtracted}
           runningId={runningId}
         />
       )}

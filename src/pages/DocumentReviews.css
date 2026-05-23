@@ -97,16 +97,16 @@
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: flex-end;
-  z-index: 1000;
+  z-index: 200;
   animation: fadeIn var(--duration-fast) var(--ease-out);
   padding: 0;
 }
 
 .dr-modal {
   width: min(600px, 100vw);
-  height: 100vh;
+  height: 100%;
   background: var(--surface);
   border-left: 1px solid var(--surface-border);
   display: flex;
@@ -409,7 +409,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
+  z-index: 210;
   padding: 32px;
   animation: fadeIn var(--duration-fast) var(--ease-out);
 }
@@ -439,4 +439,71 @@
 
 .dr-lightbox-close:hover {
   background: rgba(255, 255, 255, 0.2);
+  color: #fff;
 }
+
+/* ── Modal Header Action Buttons ─────────────────── */
+.dr-modal-action-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--surface-border);
+  color: var(--text-tertiary);
+  background: var(--surface);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.dr-modal-action-btn:hover {
+  background: var(--surface-high);
+  color: var(--text-primary);
+  border-color: var(--text-secondary);
+}
+
+/* Delete button special hover and animation */
+.dr-modal-action-btn.delete {
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.dr-modal-action-btn.delete:hover {
+  color: #fff !important;
+  background: #ff3b3b !important;
+  border-color: #ff3b3b !important;
+  box-shadow: 0 0 12px rgba(255, 59, 59, 0.4);
+  transform: scale(1.08) rotate(-3deg);
+}
+
+.dr-modal-action-btn.delete:active {
+  transform: scale(0.95);
+}
+
+/* Table inline action delete button */
+.ops-action-btn.delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-xs);
+  border: 1px solid transparent;
+  color: var(--text-tertiary);
+  background: transparent;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.ops-action-btn.delete:hover {
+  color: #ff3b3b;
+  background: rgba(255, 59, 59, 0.1);
+  border-color: rgba(255, 59, 59, 0.2);
+  box-shadow: 0 0 8px rgba(255, 59, 59, 0.2);
+  transform: scale(1.08) rotate(3deg);
+}
+
+.ops-action-btn.delete:active {
+  transform: scale(0.95);
+}
+
