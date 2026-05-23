@@ -33,10 +33,6 @@ export default function TopBar() {
         </div>
       </div>
       <div className="topbar-right">
-        <div className="topbar-live">
-          <span className="topbar-live-dot" />
-          Ao vivo
-        </div>
         <button
           className="btn btn-ghost btn-icon btn-sm"
           onClick={() => window.dispatchEvent(new CustomEvent('app:refresh'))}
