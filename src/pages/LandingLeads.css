@@ -640,3 +640,87 @@
   animation: ops-spin 1s linear infinite;
 }
 
+/* ── Inline Table Status Switcher ───────────────── */
+.ll-table-select {
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  user-select: none;
+}
+
+.ll-table-select.open {
+  z-index: 230;
+}
+
+.ll-table-select-trigger {
+  display: flex;
+  align-items: center;
+}
+
+.ll-table-select-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  z-index: 220;
+  min-width: 145px;
+  margin-top: 6px;
+  animation: fadeSlideDown var(--duration-fast) var(--ease-out);
+}
+
+/* Permitir que o dropdown passe para fora da tabela e evitar travadas de renderização */
+.data-table-wrapper {
+  overflow: visible !important;
+}
+
+.data-table-wrapper > div {
+  overflow: visible !important;
+}
+
+
+
+.ll-table-select-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  background: transparent;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  transition: all var(--duration-fast);
+  font-family: var(--font-body);
+}
+
+.ll-table-select-option:hover {
+  background: var(--surface-high);
+  color: var(--text-primary);
+}
+
+.ll-table-select-option.active {
+  background: var(--primary-glow);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ── Modal Status Row ───────────────────────────── */
+.ll-modal-status-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  width: 100%;
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+

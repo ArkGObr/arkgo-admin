@@ -10,20 +10,16 @@ import './LandingLeads.css';
 
 /* ─── Status Metadata ───────────────────────────────────── */
 const INTEREST_META = {
-  fila:        { label: 'Fila',        color: 'var(--warning)', bg: 'rgba(255,184,0,0.1)',  border: 'rgba(255,184,0,0.2)' },
-  duvida:      { label: 'Dúvida',      color: 'var(--info)',    bg: 'rgba(59,158,255,0.1)', border: 'rgba(59,158,255,0.2)' },
-  parceria:    { label: 'Parceria',    color: 'var(--success)', bg: 'rgba(153,235,9,0.1)',  border: 'rgba(153,235,9,0.2)' },
-  conversado:  { label: 'Conversado',  color: '#a78bfa',        bg: 'rgba(167,139,250,0.1)', border: 'rgba(167,139,250,0.2)' },
-  atendido:    { label: 'Atendido',    color: '#10b981',        bg: 'rgba(16,185,129,0.1)',  border: 'rgba(16,185,129,0.2)' },
+  fila:     { label: 'Fila',     color: 'var(--warning)', bg: 'rgba(255,184,0,0.1)',  border: 'rgba(255,184,0,0.2)' },
+  duvida:   { label: 'Dúvida',   color: 'var(--info)',    bg: 'rgba(59,158,255,0.1)', border: 'rgba(59,158,255,0.2)' },
+  parceria: { label: 'Parceria', color: 'var(--success)', bg: 'rgba(153,235,9,0.1)',  border: 'rgba(153,235,9,0.2)' },
 };
 
 const INTEREST_OPTIONS = [
-  { value: '',           label: 'Todos os motivos/status' },
-  { value: 'fila',       label: 'Fila' },
-  { value: 'duvida',     label: 'Dúvida' },
-  { value: 'parceria',   label: 'Parceria' },
-  { value: 'conversado', label: 'Conversado' },
-  { value: 'atendido',   label: 'Atendido' },
+  { value: '',         label: 'Todos os motivos' },
+  { value: 'fila',     label: 'Fila' },
+  { value: 'duvida',   label: 'Dúvida' },
+  { value: 'parceria', label: 'Parceria' },
 ];
 
 const ATENDIMENTO_OPTIONS = [
@@ -32,6 +28,28 @@ const ATENDIMENTO_OPTIONS = [
   { value: 'conversado', label: 'Conversado', color: '#a78bfa' },
   { value: 'atendido',   label: 'Atendido', color: '#10b981' },
 ];
+
+/* ─── Utility Parsers ───────────────────────────────────── */
+function getLeadStatus(message) {
+  if (message && message.startsWith('[atendido]')) {
+    return 'atendido';
+  }
+  if (message && message.startsWith('[conversado]')) {
+    return 'conversado';
+  }
+  return 'pendente';
+}
+
+function getCleanMessage(message) {
+  if (!message) return '';
+  if (message.startsWith('[atendido]')) {
+    return message.substring('[atendido]'.length).trim();
+  }
+  if (message.startsWith('[conversado]')) {
+    return message.substring('[conversado]'.length).trim();
+  }
+  return message;
+}
 
 /* ─── Filter Custom Selects ────────────────────────────── */
 function InterestSelect({ value, onChange }) {
@@ -142,8 +160,69 @@ function AtendimentoSelect({ value, onChange }) {
   );
 }
 
-/* ─── Modal Status Select ──────────────────────────────── */
-function ModalStatusSelect({ value, onChange, disabled }) {
+/* ─── Inline Table Status Switcher ─────────────────────── */
+function TableAtendimentoSelect({ row, onChange, disabled }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const status = getLeadStatus(row.message);
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  const badge = (() => {
+    if (status === 'atendido') {
+      return <Badge label="Atendido" color="#10b981" bg="rgba(16,185,129,0.1)" border="rgba(16,185,129,0.2)" />;
+    }
+    if (status === 'conversado') {
+      return <Badge label="Conversado" color="#a78bfa" bg="rgba(167,139,250,0.1)" border="rgba(167,139,250,0.2)" />;
+    }
+    return <Badge label="Não Atendido" color="var(--warning)" bg="rgba(255,184,0,0.1)" border="rgba(255,184,0,0.2)" />;
+  })();
+
+  const options = [
+    { value: 'pendente',   label: 'Não Atendido', color: 'var(--warning)' },
+    { value: 'conversado', label: 'Conversado',   color: '#a78bfa' },
+    { value: 'atendido',   label: 'Atendido',     color: '#10b981' },
+  ];
+
+  return (
+    <div className={`ll-table-select ${open ? 'open' : ''}`} ref={ref} onClick={e => e.stopPropagation()}>
+      <div className="ll-table-select-trigger" onClick={() => !disabled && setOpen(o => !o)}>
+        {badge}
+      </div>
+
+      {open && (
+        <div className="ll-table-select-dropdown">
+          {options.map(opt => {
+            const isActive = opt.value === status;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                className={`ll-table-select-option ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  onChange(row, opt.value);
+                  setOpen(false);
+                }}
+              >
+                <span className="ll-select-dot" style={{ background: opt.color }} />
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Modal Field selectors ────────────────────────────── */
+function ModalInterestSelect({ value, onChange, disabled }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   
@@ -160,7 +239,7 @@ function ModalStatusSelect({ value, onChange, disabled }) {
 
   return (
     <div className="ll-modal-status-select-container" ref={ref}>
-      <span className="ll-meta-label">Status / Motivo</span>
+      <span className="ll-meta-label">Motivo original</span>
       <div className="ll-modal-status-select-wrapper">
         <button
           type="button"
@@ -199,6 +278,61 @@ function ModalStatusSelect({ value, onChange, disabled }) {
   );
 }
 
+function ModalAtendimentoSelect({ value, onChange, disabled }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  
+  const options = ATENDIMENTO_OPTIONS.filter(o => o.value !== '');
+  const selected = options.find(o => o.value === value) || options[0];
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  return (
+    <div className="ll-modal-status-select-container" ref={ref}>
+      <span className="ll-meta-label">Status Atendimento</span>
+      <div className="ll-modal-status-select-wrapper">
+        <button
+          type="button"
+          className={`ll-modal-status-select-trigger ${open ? 'open' : ''}`}
+          onClick={() => !disabled && setOpen(o => !o)}
+          disabled={disabled}
+        >
+          {selected.color && (
+            <span className="ll-select-dot" style={{ background: selected.color }} />
+          )}
+          <span className="ll-modal-status-label">{selected.label}</span>
+          <ChevronDown size={14} className={`ll-select-chevron ${open ? 'rotated' : ''}`} />
+        </button>
+
+        {open && (
+          <div className="ll-modal-status-dropdown">
+            {options.map(opt => {
+              const isActive = opt.value === value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  className={`ll-modal-status-option ${isActive ? 'active' : ''}`}
+                  onClick={() => { onChange(opt.value); setOpen(false); }}
+                >
+                  <span className="ll-select-dot" style={{ background: opt.color }} />
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Confirm Delete Dialog ────────────────────────────── */
 function ConfirmDelete({ onConfirm, onCancel, loading }) {
   return (
@@ -226,41 +360,56 @@ function ConfirmDelete({ onConfirm, onCancel, loading }) {
 }
 
 /* ─── Lead Detail Modal (slide-in) ──────────────────────── */
-function LeadModal({ row, onClose, onUpdateStatus, onUpdateData, onDelete }) {
-  const [currentInterest, setCurrentInterest] = useState(row.interest);
-  const [editMode, setEditMode]               = useState(false);
-  const [editFields, setEditFields]           = useState({
+function LeadModal({ row, onClose, onUpdateInterest, onUpdateAtendimento, onUpdateData, onDelete }) {
+  const [currentInterest, setCurrentInterest]       = useState(row.interest);
+  const [currentAtendimento, setCurrentAtendimento] = useState(getLeadStatus(row.message));
+  const [editMode, setEditMode]                     = useState(false);
+  const [editFields, setEditFields]                 = useState({
     name: row.name || '',
     email: row.email || '',
     phone: row.phone || '',
     city: row.city || '',
-    message: row.message || '',
+    message: getCleanMessage(row.message),
   });
-  const [saveLoading, setSaveLoading]         = useState(false);
-  const [statusLoading, setStatusLoading]     = useState(false);
-  const [deleteLoading, setDeleteLoading]     = useState(false);
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const [error, setError]                     = useState('');
+  const [saveLoading, setSaveLoading]               = useState(false);
+  const [statusLoading, setStatusLoading]           = useState(false);
+  const [deleteLoading, setDeleteLoading]           = useState(false);
+  const [showConfirmDelete, setShowConfirmDelete]   = useState(false);
+  const [error, setError]                           = useState('');
 
   useEffect(() => {
     setCurrentInterest(row.interest);
+    setCurrentAtendimento(getLeadStatus(row.message));
     setEditFields({
       name: row.name || '',
       email: row.email || '',
       phone: row.phone || '',
       city: row.city || '',
-      message: row.message || '',
+      message: getCleanMessage(row.message),
     });
   }, [row]);
 
-  const handleStatusChange = async (newStatus) => {
+  const handleInterestChange = async (newInterest) => {
     setStatusLoading(true);
     setError('');
     try {
-      await onUpdateStatus(row.id, newStatus);
-      setCurrentInterest(newStatus);
+      await onUpdateInterest(row.id, newInterest);
+      setCurrentInterest(newInterest);
     } catch (err) {
-      setError(err.message || 'Erro ao atualizar status.');
+      setError(err.message || 'Erro ao atualizar motivo.');
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  const handleAtendimentoChange = async (newAtendimento) => {
+    setStatusLoading(true);
+    setError('');
+    try {
+      await onUpdateAtendimento(row, newAtendimento);
+      setCurrentAtendimento(newAtendimento);
+    } catch (err) {
+      setError(err.message || 'Erro ao atualizar atendimento.');
     } finally {
       setStatusLoading(false);
     }
@@ -270,7 +419,23 @@ function LeadModal({ row, onClose, onUpdateStatus, onUpdateData, onDelete }) {
     setSaveLoading(true);
     setError('');
     try {
-      await onUpdateData(row.id, editFields);
+      // Prepara a mensagem aplicando o status atual
+      let finalMsg = editFields.message;
+      if (currentAtendimento === 'conversado') {
+        finalMsg = `[conversado] ${editFields.message}`;
+      } else if (currentAtendimento === 'atendido') {
+        finalMsg = `[atendido] ${editFields.message}`;
+      }
+      
+      const payload = {
+        name: editFields.name,
+        email: editFields.email,
+        phone: editFields.phone,
+        city: editFields.city,
+        message: finalMsg,
+      };
+
+      await onUpdateData(row.id, payload);
       setEditMode(false);
     } catch (err) {
       setError(err.message || 'Erro ao salvar dados.');
@@ -292,7 +457,8 @@ function LeadModal({ row, onClose, onUpdateStatus, onUpdateData, onDelete }) {
     }
   };
 
-  const meta = INTEREST_META[currentInterest] || INTEREST_META.fila;
+  const metaInterest = INTEREST_META[currentInterest] || INTEREST_META.fila;
+  const metaAtendimento = ATENDIMENTO_OPTIONS.find(o => o.value === currentAtendimento) || ATENDIMENTO_OPTIONS[1];
 
   return (
     <div className="ll-modal-overlay" onClick={onClose}>
@@ -300,7 +466,7 @@ function LeadModal({ row, onClose, onUpdateStatus, onUpdateData, onDelete }) {
         {/* Header */}
         <div className="ll-modal-header">
           <div className="ll-modal-header-info">
-            <Badge label={meta.label} color={meta.color} bg={meta.bg} border={meta.border} />
+            <Badge label={metaInterest.label} color={metaInterest.color} bg={metaInterest.bg} border={metaInterest.border} />
             <div>
               <h2 className="ll-modal-name">{row.name || '—'}</h2>
               <span className="ll-modal-sub">{row.city || '—'}</span>
@@ -346,13 +512,17 @@ function LeadModal({ row, onClose, onUpdateStatus, onUpdateData, onDelete }) {
             </div>
           )}
 
-          {/* Status Edit */}
-          <div className="ll-section">
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <ModalStatusSelect value={currentInterest} onChange={handleStatusChange} disabled={statusLoading} />
-              {statusLoading && <RefreshCw size={14} className="ops-spinner" style={{ color: 'var(--primary)', marginTop: 20 }} />}
+          {/* Status edit row */}
+          {!editMode && (
+            <div className="ll-modal-status-row">
+              <div style={{ flex: 1 }}>
+                <ModalInterestSelect value={currentInterest} onChange={handleInterestChange} disabled={statusLoading} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <ModalAtendimentoSelect value={currentAtendimento} onChange={handleAtendimentoChange} disabled={statusLoading} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Fields */}
           {editMode ? (
@@ -432,10 +602,10 @@ function LeadModal({ row, onClose, onUpdateStatus, onUpdateData, onDelete }) {
               </div>
 
               {/* Message */}
-              {row.message && (
+              {getCleanMessage(row.message) && (
                 <div className="ll-section">
                   <div className="ll-section-title">Mensagem</div>
-                  <div className="ll-message-box">{row.message}</div>
+                  <div className="ll-message-box">{getCleanMessage(row.message)}</div>
                 </div>
               )}
             </>
@@ -477,6 +647,7 @@ export default function LandingLeads() {
   const [selectedRow, setSelectedRow]       = useState(null);
   const [leadToDelete, setLeadToDelete]     = useState(null);
   const [deleteLoading, setDeleteLoading]   = useState(false);
+  const [tableActionLoading, setTableActionLoading] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -521,11 +692,8 @@ export default function LandingLeads() {
       // Atendimento filter
       let matchesAtendimento = true;
       if (atendimentoFilter) {
-        if (atendimentoFilter === 'pendente') {
-          matchesAtendimento = ['fila', 'duvida', 'parceria'].includes(row.interest);
-        } else {
-          matchesAtendimento = row.interest === atendimentoFilter;
-        }
+        const currentStatus = getLeadStatus(row.message);
+        matchesAtendimento = currentStatus === atendimentoFilter;
       }
       
       return matchesInterest && matchesAtendimento;
@@ -534,8 +702,8 @@ export default function LandingLeads() {
 
   const stats = useMemo(() => {
     const total = data.length;
-    const atendidos = data.filter(r => r.interest === 'atendido').length;
-    const conversando = data.filter(r => r.interest === 'conversado').length;
+    const atendidos = data.filter(r => getLeadStatus(r.message) === 'atendido').length;
+    const conversando = data.filter(r => getLeadStatus(r.message) === 'conversado').length;
     const pendentes = total - atendidos - conversando;
     return {
       total,
@@ -545,17 +713,51 @@ export default function LandingLeads() {
   }, [data]);
 
   /* Database Operations */
-  const handleUpdateLeadStatus = async (id, newStatus) => {
+  const handleUpdateLeadInterest = async (id, newInterest) => {
     const { error: updateError } = await landingSupabase
       .from('arkgo_leads')
-      .update({ interest: newStatus })
+      .update({ interest: newInterest })
       .eq('id', id);
 
     if (updateError) throw updateError;
 
-    setData(prev => prev.map(item => item.id === id ? { ...item, interest: newStatus } : item));
+    setData(prev => prev.map(item => item.id === id ? { ...item, interest: newInterest } : item));
     if (selectedRow && selectedRow.id === id) {
-      setSelectedRow(prev => ({ ...prev, interest: newStatus }));
+      setSelectedRow(prev => ({ ...prev, interest: newInterest }));
+    }
+  };
+
+  const handleUpdateLeadAtendimento = async (row, newAtendimento) => {
+    const cleanMsg = getCleanMessage(row.message);
+    let finalMsg = cleanMsg;
+    if (newAtendimento === 'conversado') {
+      finalMsg = `[conversado] ${cleanMsg}`;
+    } else if (newAtendimento === 'atendido') {
+      finalMsg = `[atendido] ${cleanMsg}`;
+    }
+
+    const { error: updateError } = await landingSupabase
+      .from('arkgo_leads')
+      .update({ message: finalMsg })
+      .eq('id', row.id);
+
+    if (updateError) throw updateError;
+
+    setData(prev => prev.map(item => item.id === row.id ? { ...item, message: finalMsg } : item));
+    if (selectedRow && selectedRow.id === row.id) {
+      setSelectedRow(prev => ({ ...prev, message: finalMsg }));
+    }
+  };
+
+  const handleInlineAtendimentoChange = async (row, newAtendimento) => {
+    setTableActionLoading(true);
+    setError('');
+    try {
+      await handleUpdateLeadAtendimento(row, newAtendimento);
+    } catch (err) {
+      setError(err.message || 'Erro ao atualizar atendimento.');
+    } finally {
+      setTableActionLoading(false);
     }
   };
 
@@ -635,18 +837,17 @@ export default function LandingLeads() {
     {
       key: 'atendimento',
       label: 'Atendimento',
-      render: row => {
-        if (row.interest === 'atendido') {
-          return <Badge label="Atendido" color="#10b981" bg="rgba(16,185,129,0.1)" border="rgba(16,185,129,0.2)" />;
-        }
-        if (row.interest === 'conversado') {
-          return <Badge label="Conversado" color="#a78bfa" bg="rgba(167,139,250,0.1)" border="rgba(167,139,250,0.2)" />;
-        }
-        return <Badge label="Não Atendido" color="var(--warning)" bg="rgba(255,184,0,0.1)" border="rgba(255,184,0,0.2)" />;
-      },
+      render: row => (
+        <TableAtendimentoSelect
+          row={row}
+          onChange={handleInlineAtendimentoChange}
+          disabled={tableActionLoading}
+        />
+      ),
       sortKey: row => {
-        if (row.interest === 'atendido') return 2;
-        if (row.interest === 'conversado') return 1;
+        const status = getLeadStatus(row.message);
+        if (status === 'atendido') return 2;
+        if (status === 'conversado') return 1;
         return 0;
       }
     },
@@ -654,7 +855,7 @@ export default function LandingLeads() {
       key: 'message',
       label: 'Mensagem',
       render: row => (
-        <span className="ops-ellipsis">{row.message || '-'}</span>
+        <span className="ops-ellipsis">{getCleanMessage(row.message) || '-'}</span>
       ),
     },
     {
@@ -714,7 +915,8 @@ export default function LandingLeads() {
             <AtendimentoSelect value={atendimentoFilter} onChange={setAtendimentoFilter} />
           </div>
         </div>
-        {error && <span className="ops-error">{error}</span>}
+        {tableActionLoading && <RefreshCw size={14} className="ops-spinner" style={{ color: 'var(--primary)', marginLeft: 8 }} />}
+        {error && <span className="ops-error" style={{ marginLeft: 16 }}>{error}</span>}
       </div>
 
       <DataTable
@@ -732,7 +934,8 @@ export default function LandingLeads() {
         <LeadModal
           row={selectedRow}
           onClose={() => setSelectedRow(null)}
-          onUpdateStatus={handleUpdateLeadStatus}
+          onUpdateInterest={handleUpdateLeadInterest}
+          onUpdateAtendimento={handleUpdateLeadAtendimento}
           onUpdateData={handleUpdateLeadData}
           onDelete={handleDeleteLead}
         />
