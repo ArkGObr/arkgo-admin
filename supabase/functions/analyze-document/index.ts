@@ -208,9 +208,11 @@ async function applyExtractedData(review: Review, extracted: Record<string, unkn
       document: extracted.document_number,
     });
 
-    if (Object.keys(userUpdate).length > 0) {
-      await supabase.from('users').update(userUpdate).eq('id', review.user_id);
-    }
+    // Libera o motorista e ativa sua conta automaticamente após a análise com sucesso
+    userUpdate.is_released = true;
+    userUpdate.status = 'active';
+
+    await supabase.from('users').update(userUpdate).eq('id', review.user_id);
   }
 
   if (review.motoboy_id) {

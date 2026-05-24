@@ -2,12 +2,14 @@
    DataTable — Core Styles + Responsive
    ══════════════════════════════════════════════ */
 
-/* Wrapper: contain:paint mantém border-radius sem bloquear scroll */
+/* Wrapper: mantém border-radius sem bloquear scroll */
 .data-table-wrapper {
   background: var(--surface);
   border: 1px solid var(--surface-border);
   border-radius: var(--radius-md);
-  contain: paint;
+  overflow: hidden;
+  max-width: 100%;
+  width: 100%;
 }
 
 /* Header */
@@ -72,12 +74,17 @@
 
 /* ─── Scroll container ─────────────────────── */
 /* ESTA div é que rola horizontalmente — nunca tire overflow-x:auto daqui */
+.data-table-wrapper .data-table-scroll,
+.data-table-wrapper > .data-table-scroll,
 .data-table-scroll {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  scrollbar-color: var(--surface-border) transparent;
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  display: block !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--surface-border) transparent !important;
 }
 
 .data-table-scroll::-webkit-scrollbar {
@@ -97,7 +104,7 @@
   font-size: 13px;
   border-collapse: collapse;
   /* min-width garante que colunas não encolham demais — scroll cuida do resto */
-  min-width: 480px;
+  min-width: 850px;
 }
 
 .data-table th {
