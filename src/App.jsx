@@ -12,6 +12,7 @@ import Recharges from './pages/Recharges';
 import Pricing from './pages/Pricing';
 import LiveMap from './pages/LiveMap';
 import DocumentReviews from './pages/DocumentReviews';
+import DocumentReviewDetails from './pages/DocumentReviewDetails';
 import LandingLeads from './pages/LandingLeads';
 import Settings from './pages/Settings';
 import { PageSpinner } from './components/ui/Spinner';
@@ -73,6 +74,7 @@ export default function App() {
             <Route path="pricing" element={<Pricing />} />
             <Route path="map" element={<LiveMap />} />
             <Route path="documents" element={<DocumentReviews />} />
+            <Route path="documents/:id" element={<DocumentReviewDetails />} />
             <Route path="landing-leads" element={<LandingLeads />} />
             <Route path="settings" element={<Settings />} />
           </Route>

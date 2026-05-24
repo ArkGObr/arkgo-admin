@@ -1,0 +1,486 @@
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  AlertCircle,
+  ArrowLeft,
+  ExternalLink,
+  FileSearch,
+  FileText,
+  Pencil,
+  Play,
+  RefreshCw,
+  Save,
+  Trash2,
+  UserCheck,
+  X,
+} from 'lucide-react';
+import Badge from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import { supabase } from '../lib/supabase';
+import { formatDateTime } from '../utils/formatDate';
+import './DocumentReviews.css';
+import './DocumentReviewDetails.css';
+
+const STATUS_META = {
+  pending:    { label: 'Pendente',   color: 'var(--warning)', bg: 'rgba(255,184,0,0.1)',    border: 'rgba(255,184,0,0.2)' },
+  processing: { label: 'Analisando', color: 'var(--info)',    bg: 'rgba(59,158,255,0.1)',   border: 'rgba(59,158,255,0.2)' },
+  completed:  { label: 'Analisado',  color: 'var(--success)', bg: 'rgba(153,235,9,0.1)',    border: 'rgba(153,235,9,0.2)' },
+  failed:     { label: 'Falhou',     color: 'var(--error)',   bg: 'rgba(255,59,59,0.1)',    border: 'rgba(255,59,59,0.2)' },
+};
+
+function ReviewBadge({ status }) {
+  const meta = STATUS_META[status] || STATUS_META.pending;
+  return <Badge label={meta.label} color={meta.color} bg={meta.bg} border={meta.border} />;
+}
+
+export default function DocumentReviewDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  
+  const [row, setRow] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
+  
+  const [files, setFiles]               = useState([]);
+  const [filesLoading, setFilesLoading] = useState(true);
+  const [filesError, setFilesError]     = useState('');
+  const [previewUrl, setPreviewUrl]     = useState(null);
+
+  const [editMode, setEditMode]   = useState(false);
+  const [editData, setEditData]   = useState({});
+  const [saveLoading, setSaveLoading] = useState(false);
+  const [saveError, setSaveError]   = useState('');
+  const [runningId, setRunningId]   = useState('');
+
+  // Fetch record
+  async function fetchRecord() {
+    setLoading(true);
+    setErrorMsg('');
+    const { data, error } = await supabase
+      .from('document_ai_reviews')
+      .select('*, users:user_id(name, email, phone, document, status, is_released)')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
+      setRow(data);
+    }
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    fetchRecord();
+  }, [id]);
+
+  // Load bucket files
+  useEffect(() => {
+    if (!row) return;
+
+    async function loadFiles() {
+      setFilesLoading(true);
+      setFilesError('');
+      try {
+        let found = [];
+        if (row.storage_bucket && row.file_path) {
+          const { data: urlData, error: urlError } = await supabase.storage
+            .from(row.storage_bucket)
+            .createSignedUrl(row.file_path, 3600);
+          
+          if (!urlError && urlData?.signedUrl) {
+            const fileName = row.file_path.split('/').pop() || 'documento';
+            const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(fileName) || 
+                            (row.mime_type && row.mime_type.startsWith('image/'));
+            
+            const fileObj = {
+              name: fileName,
+              fullPath: row.file_path,
+              signedUrl: urlData.signedUrl,
+              isImage,
+              isPrimary: true
+            };
+            found.push(fileObj);
+            
+            if (isImage) setPreviewUrl(urlData.signedUrl);
+          }
+        }
+
+        const paths = [
+          row.user_id,
+          row.id,
+          `documents/${row.user_id}`,
+          `documents/${row.id}`,
+        ].filter(Boolean);
+
+        for (const prefix of paths) {
+          const { data, error } = await supabase.storage.from('documents').list(prefix, { limit: 10 });
+          if (!error && data?.length) {
+            const withUrls = await Promise.all(
+              data.filter(f => f.name && !f.name.endsWith('/')).map(async f => {
+                const fullPath = `${prefix}/${f.name}`;
+                if (found.some(item => item.fullPath === fullPath)) return null;
+                const { data: urlData } = await supabase.storage.from('documents').createSignedUrl(fullPath, 3600);
+                return {
+                  ...f,
+                  fullPath,
+                  signedUrl: urlData?.signedUrl || null,
+                  isImage: /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name),
+                };
+              })
+            );
+            found = [...found, ...withUrls.filter(Boolean)];
+          }
+        }
+        setFiles(found);
+        
+        if (found.length > 0 && !previewUrl) {
+          const firstImg = found.find(f => f.isImage);
+          if (firstImg) setPreviewUrl(firstImg.signedUrl);
+        }
+      } catch (err) {
+        setFilesError(err.message);
+      } finally {
+        setFilesLoading(false);
+      }
+    }
+    loadFiles();
+  }, [row?.id, row?.user_id, row?.storage_bucket, row?.file_path]);
+
+  if (loading) return <div style={{ padding: 40, color: 'var(--text-secondary)' }}>Carregando documento...</div>;
+  if (errorMsg) return <div className="ops-error" style={{ padding: 40 }}>Erro: {errorMsg}</div>;
+  if (!row) return <div style={{ padding: 40, color: 'var(--text-secondary)' }}>Documento não encontrado.</div>;
+
+  const analysis = row.extracted_data;
+  const driverName    = row.users?.name || row.subject_name || '—';
+  const driverContact = row.users?.phone || row.users?.email || row.subject_document || '—';
+
+  function startEdit() {
+    const copy = {};
+    if (analysis) {
+      Object.entries(analysis).forEach(([k, v]) => {
+        copy[k] = typeof v === 'object' ? JSON.stringify(v) : String(v ?? '');
+      });
+    }
+    setEditData(copy);
+    setEditMode(true);
+    setSaveError('');
+  }
+
+  function cancelEdit() {
+    setEditMode(false);
+    setEditData({});
+    setSaveError('');
+  }
+
+  async function handleSave() {
+    setSaveLoading(true);
+    setSaveError('');
+    try {
+      const parsed = {};
+      Object.entries(editData).forEach(([k, v]) => {
+        try { parsed[k] = JSON.parse(v); } catch { parsed[k] = v; }
+      });
+      const { error: updError } = await supabase
+        .from('document_ai_reviews')
+        .update({ extracted_data: parsed })
+        .eq('id', row.id);
+      if (updError) throw new Error(updError.message);
+      
+      setRow(prev => ({ ...prev, extracted_data: parsed }));
+      setEditMode(false);
+    } catch (err) {
+      setSaveError(err.message || 'Erro ao salvar.');
+    } finally {
+      setSaveLoading(false);
+    }
+  }
+
+  async function onReanalyze() {
+    setRunningId(row.id);
+    setSaveError('');
+    const { error: invokeError } = await supabase.functions.invoke('analyze-document', {
+      body: { reviewId: row.id },
+    });
+    if (invokeError) setSaveError(invokeError.message);
+    await fetchRecord();
+    setRunningId('');
+  }
+
+  async function onToggleRelease() {
+    const newReleased = !row.users?.is_released;
+    const newStatus = newReleased ? 'active' : 'inactive';
+    const { error: updErr } = await supabase
+      .from('users')
+      .update({ is_released: newReleased, status: newStatus })
+      .eq('id', row.user_id);
+    if (updErr) {
+      setSaveError(updErr.message);
+      return;
+    }
+    setRow(prev => ({
+      ...prev,
+      users: { ...prev.users, is_released: newReleased, status: newStatus }
+    }));
+  }
+
+  async function onDeleteClick() {
+    if (!window.confirm("Apagar permanentemente este registro?")) return;
+    const { error: delError } = await supabase.from('document_ai_reviews').delete().eq('id', row.id);
+    if (delError) {
+      setSaveError(delError.message);
+      return;
+    }
+    navigate('/documents');
+  }
+
+  return (
+    <div className="drd-container">
+      {/* Header */}
+      <div className="drd-header">
+        <div className="drd-header-left">
+          <button className="drd-back-btn" onClick={() => navigate('/documents')} title="Voltar">
+            <ArrowLeft size={18} />
+          </button>
+          <div className="drd-header-info">
+            <ReviewBadge status={row.status} />
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <h2 className="drd-name" style={{ margin: 0 }}>{driverName}</h2>
+                {row.users && (
+                  <Badge
+                    label={row.users?.is_released ? 'App Liberado' : 'Acesso Bloqueado'}
+                    color={row.users?.is_released ? 'var(--success)' : 'var(--warning)'}
+                    bg={row.users?.is_released ? 'rgba(153,235,9,0.1)' : 'rgba(255,184,0,0.1)'}
+                    border={row.users?.is_released ? 'rgba(153,235,9,0.2)' : 'rgba(255,184,0,0.2)'}
+                  />
+                )}
+              </div>
+              <span className="drd-contact">{driverContact}</span>
+            </div>
+          </div>
+        </div>
+        <div className="drd-header-actions">
+          {row.users && (
+            <Button
+              size="sm"
+              variant={row.users?.is_released ? 'ghost' : 'primary'}
+              onClick={onToggleRelease}
+              title={row.users?.is_released ? 'Bloquear acesso' : 'Liberar acesso'}
+            >
+              {row.users?.is_released ? 'Bloquear App' : 'Liberar App'}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant={row.status === 'completed' ? 'ghost' : 'primary'}
+            onClick={onReanalyze}
+            disabled={runningId === row.id || row.status === 'processing'}
+          >
+            {runningId === row.id ? <RefreshCw size={14} /> : <Play size={14} />}
+            {row.status === 'completed' ? 'Reanalisar' : 'Analisar'}
+          </Button>
+          <button className="dr-modal-action-btn delete" onClick={onDeleteClick} title="Apagar">
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="drd-content">
+        {/* Left Column: Image Viewer */}
+        <div className="drd-left">
+          <div className="drd-viewer">
+            {previewUrl ? (
+              <div className="drd-viewer-container">
+                <img src={previewUrl} alt="Visualização do Documento" className="drd-viewer-img" />
+                <div className="drd-viewer-actions">
+                  <a href={previewUrl} target="_blank" rel="noreferrer" className="drd-viewer-btn">
+                    <ExternalLink size={14} /> Abrir documento original
+                  </a>
+                </div>
+              </div>
+            ) : (
+              <div className="drd-viewer-empty">
+                {filesLoading ? (
+                  <>
+                    <div className="dr-files-spinner" />
+                    <span>Carregando visualização do documento...</span>
+                  </>
+                ) : (
+                  <>
+                    <FileText size={48} />
+                    <span>Nenhum documento disponível para visualização rápida</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Data */}
+        <div className="drd-right">
+          {/* Meta info */}
+          <div className="dr-meta-grid">
+            <div className="dr-meta-item">
+              <span className="dr-meta-label">Tipo de documento</span>
+              <span className="dr-meta-value">{row.document_type || '—'}</span>
+            </div>
+            <div className="dr-meta-item">
+              <span className="dr-meta-label">Modelo IA</span>
+              <span className="dr-meta-value">{row.gemini_model || 'gemini-2.5-flash-lite'}</span>
+            </div>
+            <div className="dr-meta-item">
+              <span className="dr-meta-label">Chave</span>
+              <span className="dr-meta-value">{row.gemini_key_index ? `chave ${row.gemini_key_index}` : '—'}</span>
+            </div>
+            <div className="dr-meta-item">
+              <span className="dr-meta-label">Atualizado</span>
+              <span className="dr-meta-value">{formatDateTime(row.updated_at || row.created_at)}</span>
+            </div>
+            {(analysis?.vehicle_plate || analysis?.vehicle_model) && (
+              <div className="dr-meta-item">
+                <span className="dr-meta-label">Veículo</span>
+                <span className="dr-meta-value">
+                  {[analysis.vehicle_plate, analysis.vehicle_model].filter(Boolean).join(' ')}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* AI Analysis */}
+          {analysis && Object.keys(analysis).length > 0 && (
+            <div className="dr-section">
+              <div className="dr-section-title">
+                <UserCheck size={14} />
+                Dados Extraídos pela IA
+                {!editMode ? (
+                  <button className="dr-edit-btn" onClick={startEdit} title="Editar dados">
+                    <Pencil size={12} /> Editar
+                  </button>
+                ) : (
+                  <div className="dr-edit-actions">
+                    <button className="dr-edit-btn cancel" onClick={cancelEdit} disabled={saveLoading}>Cancelar</button>
+                    <button className="dr-edit-btn save" onClick={handleSave} disabled={saveLoading}>
+                      {saveLoading ? <RefreshCw size={12} /> : <Save size={12} />} Salvar
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {saveError && (
+                <div className="dr-error-box" style={{ marginBottom: 8 }}>
+                  <AlertCircle size={14} />
+                  <span>{saveError}</span>
+                </div>
+              )}
+
+              {editMode ? (
+                <div className="dr-edit-grid">
+                  {Object.entries(editData).map(([key]) => (
+                    <div key={key} className="dr-edit-field">
+                      <label className="dr-edit-label">{key.replace(/_/g, ' ')}</label>
+                      <input
+                        className="dr-edit-input"
+                        value={editData[key]}
+                        onChange={e => setEditData(prev => ({ ...prev, [key]: e.target.value }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="dr-analysis-grid">
+                  {Object.entries(analysis).map(([key, val]) => (
+                    <div key={key} className="dr-analysis-item">
+                      <span className="dr-analysis-label">{key.replace(/_/g, ' ')}</span>
+                      <span className="dr-analysis-value">
+                        {typeof val === 'object' ? JSON.stringify(val) : String(val ?? '—')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* AI Raw result */}
+          {row.ai_result && (
+            <div className="dr-section">
+              <div className="dr-section-title">
+                <FileSearch size={14} />
+                Resultado Completo da IA
+              </div>
+              <pre className="dr-raw-result">
+                {typeof row.ai_result === 'string' ? row.ai_result : JSON.stringify(row.ai_result, null, 2)}
+              </pre>
+            </div>
+          )}
+
+          {row.error_message && (
+            <div className="dr-error-box">
+              <AlertCircle size={14} />
+              <span>{row.error_message}</span>
+            </div>
+          )}
+
+          {/* Bucket files */}
+          <div className="dr-section">
+            <div className="dr-section-title">
+              <FileText size={14} />
+              Documentos no Bucket
+            </div>
+            {filesLoading && (
+              <div className="dr-files-loading">
+                <div className="dr-files-spinner" /> Carregando arquivos...
+              </div>
+            )}
+            {!filesLoading && filesError && (
+              <div className="dr-error-box">
+                <AlertCircle size={14} /> <span>Erro ao carregar arquivos: {filesError}</span>
+              </div>
+            )}
+            {!filesLoading && !filesError && files.length === 0 && (
+              <div className="dr-files-empty">Nenhum arquivo encontrado no bucket para este registro.</div>
+            )}
+            {!filesLoading && files.length > 0 && (
+              <div className="dr-files-grid">
+                {files.map(file => (
+                  <div key={file.fullPath} className="dr-file-card">
+                    <div
+                      className="dr-file-preview"
+                      onClick={() => file.isImage && setPreviewUrl(file.signedUrl)}
+                      style={{ cursor: file.isImage ? 'zoom-in' : 'default' }}
+                    >
+                      {file.isImage ? <img src={file.signedUrl} alt={file.name} /> : <div className="dr-file-icon"><FileText size={28} /></div>}
+                    </div>
+                    <div className="dr-file-info">
+                      <span className="dr-file-name" title={file.name}>{file.name}</span>
+                      <span className="dr-file-size">
+                        {file.metadata?.size ? `${(file.metadata.size / 1024).toFixed(1)} KB` : '—'}
+                      </span>
+                    </div>
+                    {file.signedUrl && (
+                      <a className="dr-file-open" href={file.signedUrl} target="_blank" rel="noreferrer">
+                        <ExternalLink size={13} /> Abrir
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Lightbox for full screen preview inside page */}
+      {previewUrl && (
+        <div className="dr-lightbox" onClick={e => { e.stopPropagation(); setPreviewUrl(null); }}>
+          <img src={previewUrl} alt="preview" onClick={e => e.stopPropagation()} />
+          <button className="dr-lightbox-close" onClick={() => setPreviewUrl(null)}>
+            <X size={20} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

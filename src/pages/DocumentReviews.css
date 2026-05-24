@@ -97,27 +97,22 @@
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(4px);
   display: flex;
-  align-items: stretch;
-  justify-content: flex-end;
   z-index: 200;
   animation: fadeIn var(--duration-fast) var(--ease-out);
-  padding: 0;
+  padding: 40px 24px;
 }
 
 .dr-modal {
-  width: min(1200px, 98vw);
-  height: 100%;
+  width: min(1300px, 98vw);
+  height: calc(100vh - 80px);
+  margin: auto;
   background: var(--surface);
-  border-left: 1px solid var(--surface-border);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: slideInRight var(--duration-normal) var(--ease-out);
-}
-
-@keyframes slideInRight {
-  from { transform: translateX(100%); opacity: 0; }
-  to   { transform: translateX(0);    opacity: 1; }
+  animation: scaleIn var(--duration-normal) var(--ease-out);
 }
 
 /* ── Modal Header ───────────────────────────────── */
@@ -265,6 +260,94 @@
   color: var(--text-primary);
   font-weight: 500;
   word-break: break-word;
+}
+
+/* ── Edit grid ──────────────────────────────────── */
+.dr-edit-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.dr-edit-field {
+  background: var(--surface-high);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.dr-edit-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--text-tertiary);
+  letter-spacing: 0.3px;
+}
+
+.dr-edit-input {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-xs);
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 100%;
+  font-family: inherit;
+  transition: border-color var(--duration-fast);
+  box-sizing: border-box;
+}
+
+.dr-edit-input:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-glow);
+}
+
+.dr-edit-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.dr-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  border: 1px solid var(--surface-border);
+  transition: all var(--duration-fast);
+  background: var(--surface-high);
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+.dr-edit-btn.cancel {
+  margin-left: 0;
+}
+
+.dr-edit-btn:hover {
+  background: var(--surface-border);
+  color: var(--text-primary);
+}
+
+.dr-edit-btn.save {
+  margin-left: 0;
+  background: rgba(153, 235, 9, 0.1);
+  color: var(--success);
+  border-color: rgba(153, 235, 9, 0.2);
+}
+
+.dr-edit-btn.save:hover {
+  background: var(--success);
+  color: #fff;
+  border-color: var(--success);
 }
 
 /* ── Raw result ─────────────────────────────────── */
@@ -618,7 +701,7 @@
   display: flex;
   flex: 1;
   overflow: hidden;
-  height: 100%;
+  min-height: 0;
 }
 
 .dr-modal-left {
