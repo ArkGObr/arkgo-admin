@@ -9,7 +9,7 @@
 /* ── Toast ─────────────────────────────────── */
 .settings-toast {
   position: fixed;
-  top: calc(var(--topbar-height) + 16px);
+  bottom: 24px;
   right: 24px;
   z-index: 9999;
   display: flex;
@@ -19,8 +19,19 @@
   border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
-  animation: fadeSlideDown var(--duration-normal) var(--ease-out) both;
+  animation: toastSlideUp var(--duration-normal) var(--ease-out) both;
   box-shadow: var(--shadow-lg);
+}
+
+@keyframes toastSlideUp {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .settings-toast--success {

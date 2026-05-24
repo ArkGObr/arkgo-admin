@@ -220,6 +220,8 @@ export default function Settings() {
   // Modal State
   const [ruleModalOpen, setRuleModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [ruleToDelete, setRuleToDelete] = useState(null);
 
   const showToast = (type, msg) => setToast({ type, msg });
 
@@ -276,16 +278,24 @@ export default function Settings() {
     }
   }
 
-  /* ── Delete Rule ── */
-  async function handleDeleteRule(id) {
-    if (!window.confirm('Tem certeza que deseja excluir esta regra de tarifa?')) return;
+  /* ── Open Delete Confirm Modal ── */
+  const handleOpenDeleteConfirm = (rule) => {
+    setRuleToDelete(rule);
+    setDeleteModalOpen(true);
+  };
+
+  /* ── Confirm Delete Rule ── */
+  async function handleConfirmDelete() {
+    if (!ruleToDelete) return;
     try {
       const { error } = await supabase
         .from('pricing_rules')
         .delete()
-        .eq('id', id);
+        .eq('id', ruleToDelete.id);
       if (error) throw error;
       showToast('success', 'Regra excluída com sucesso!');
+      setDeleteModalOpen(false);
+      setRuleToDelete(null);
       loadRules();
     } catch (err) {
       showToast('error', 'Erro ao excluir regra: ' + err.message);
@@ -539,7 +549,7 @@ CREATE POLICY "Auth write pricing_rules"
                       size="sm"
                       iconOnly
                       icon={Trash2}
-                      onClick={() => handleDeleteRule(rule.id)}
+                      onClick={() => handleOpenDeleteConfirm(rule)}
                     />
                   </div>
                 </div>
@@ -689,6 +699,38 @@ CREATE POLICY "Auth write pricing_rules"
               </div>
             </div>
 
+          </div>
+        )}
+      </Modal>
+
+      {/* ────── Modal: Delete Confirmation ────── */}
+      <Modal
+        open={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title="Confirmar Exclusão"
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDeleteModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="primary"
+              style={{ background: 'var(--error)', borderColor: 'var(--error)', color: '#fff' }}
+              onClick={handleConfirmDelete}
+            >
+              Excluir Regra
+            </Button>
+          </>
+        }
+      >
+        {ruleToDelete && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-md)' }}>
+            <p style={{ color: 'var(--text-primary)', fontSize: '14px', lineHeight: '1.6' }}>
+              Tem certeza que deseja excluir a regra de tarifa <strong>"{ruleToDelete.name}"</strong>?
+            </p>
+            <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', lineHeight: '1.5' }}>
+              Esta ação é permanente e não poderá ser desfeita. O aplicativo deixará de aplicar os multiplicadores vinculados a esta regra imediatamente.
+            </p>
           </div>
         )}
       </Modal>
