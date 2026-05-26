@@ -173,6 +173,98 @@
   padding: 40px;
 }
 
+/* ── Document Cards (Bucket Files) ─────────────── */
+.drd-doc-card {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: transform var(--duration-fast);
+}
+
+.drd-doc-card:hover {
+  transform: translateY(-2px);
+}
+
+.drd-doc-card-thumb {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  border: 2px solid var(--surface-border);
+  overflow: hidden;
+  position: relative;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.drd-doc-card:hover .drd-doc-card-thumb {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.drd-doc-card--active .drd-doc-card-thumb {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-glow);
+}
+
+.drd-doc-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.drd-doc-card-icon {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+  width: 100%;
+  height: 100%;
+}
+
+.drd-doc-card-tag {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  background: var(--surface-border);
+  color: var(--text-tertiary);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.drd-doc-card-label {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 2px;
+}
+
+.drd-doc-card-name {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.drd-doc-card-size {
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+
 /* Responsive */
 @media (max-width: 1024px) {
   .drd-content {
