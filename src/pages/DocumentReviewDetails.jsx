@@ -93,7 +93,7 @@ export default function DocumentReviewDetails() {
     setErrorMsg('');
     const { data, error } = await supabase
       .from('document_ai_reviews')
-      .select('*, users:user_id(name, email, phone, document, status, is_released)')
+      .select('*, users:user_id(name, email, phone, document, status, is_released, block_reason)')
       .eq('id', id)
       .single();
     
@@ -292,17 +292,39 @@ export default function DocumentReviewDetails() {
   async function onToggleRelease() {
     const newReleased = !row.users?.is_released;
     const newStatus = newReleased ? 'active' : 'inactive';
+    
+    let blockReason = null;
+    if (!newReleased) {
+      const reason = window.prompt(
+        "Por que você está bloqueando este acesso? (O motorista verá este motivo no aplicativo)",
+        row.users?.block_reason || "Cadastro recusado ou bloqueado pela administração."
+      );
+      if (reason === null) return; // Se o admin cancelar o prompt, aborta a operação inteira
+      blockReason = reason;
+    }
+
     const { error: updErr } = await supabase
       .from('users')
-      .update({ is_released: newReleased, status: newStatus })
+      .update({ 
+        is_released: newReleased, 
+        status: newStatus,
+        block_reason: blockReason
+      })
       .eq('id', row.user_id);
+      
     if (updErr) {
       setSaveError(updErr.message);
       return;
     }
+    
     setRow(prev => ({
       ...prev,
-      users: { ...prev.users, is_released: newReleased, status: newStatus }
+      users: { 
+        ...prev.users, 
+        is_released: newReleased, 
+        status: newStatus,
+        block_reason: blockReason
+      }
     }));
   }
 
@@ -338,7 +360,14 @@ export default function DocumentReviewDetails() {
                   />
                 )}
               </div>
-              <span className="drd-contact">{driverContact}</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span className="drd-contact">{driverContact}</span>
+                {row.users && !row.users.is_released && row.users.block_reason && (
+                  <span className="drd-block-reason" style={{ fontSize: 12, color: 'var(--error)', marginTop: 4, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 500 }}>
+                    <AlertCircle size={13} /> Motivo do bloqueio: "{row.users.block_reason}"
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
