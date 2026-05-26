@@ -354,7 +354,7 @@ async function applyExtractedData(review: Review, extracted: Record<string, unkn
     });
 
     if (Object.keys(driverUpdate).length > 0) {
-      await supabase.from('Motoboy').update(driverUpdate).eq('id', review.motoboy_id);
+      await supabase.from('motoboys').update(driverUpdate).eq('id', review.motoboy_id);
     }
   }
 }

@@ -14,7 +14,7 @@ export default function Transactions() {
   if (typeFilter) filters.push({ column: 'type', operator: 'eq', value: typeFilter });
 
   const { data, loading } = useSupabase('transactions', {
-    select: '*, Motoboy!transactions_motoboy_id_fkey(users!Motoboy_id_fkey(name))',
+    select: '*, motoboys(users(name))',
     filters,
     order: { column: 'created_at', ascending: false },
   });
@@ -40,7 +40,7 @@ export default function Transactions() {
       key: 'motoboy',
       label: 'Motoboy',
       className: 'text-primary',
-      render: row => row.Motoboy?.users?.name || '—',
+      render: row => row.motoboys?.users?.name || '—',
     },
     {
       key: 'type',
@@ -124,7 +124,7 @@ export default function Transactions() {
         columns={columns}
         data={data}
         loading={loading}
-        searchKeys={['Motoboy.users.name', 'description']}
+        searchKeys={['motoboys.users.name', 'description']}
         searchPlaceholder="Buscar por motoboy ou descrição..."
         emptyMessage="Nenhuma transação encontrada"
       />

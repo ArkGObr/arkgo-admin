@@ -49,13 +49,13 @@ export default function Drivers() {
     dbValue: category,
   };
 
-  const { data, loading, refetch } = useSupabase('Motoboy', {
-    select: '*, users!Motoboy_id_fkey(name, phone, email, status)',
+  const { data, loading, refetch } = useSupabase('motoboys', {
+    select: '*, users(name, phone, email, status)',
     filters: [{ column: 'vehicle_category', operator: 'eq', value: config.dbValue }],
     order: { column: 'updated_at', ascending: false },
   });
 
-  useRealtime('Motoboy', {
+  useRealtime('motoboys', {
     onUpdate: () => refetch(),
   });
 

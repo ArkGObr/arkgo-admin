@@ -6,12 +6,12 @@ import { formatCurrency } from '../utils/formatCurrency';
 import { VEHICLE_CATEGORIES } from '../utils/constants';
 
 export default function Motoboy() {
-  const { data, loading, refetch } = useSupabase('Motoboy', {
-    select: '*, users!Motoboy_id_fkey(name, phone, email, status)',
+  const { data, loading, refetch } = useSupabase('motoboys', {
+    select: '*, users(name, phone, email, status)',
     order: { column: 'updated_at', ascending: false },
   });
 
-  useRealtime('Motoboy', {
+  useRealtime('motoboys', {
     onUpdate: () => refetch(),
   });
 

@@ -6,7 +6,7 @@ const PAGE_TITLES = {
   '/': 'Dashboard',
   '/deliveries': 'Entregas',
   '/users': 'Clientes',
-  '/Motoboy': 'Motoboy',
+  '/motoboys': 'Motoboy',
   '/drivers/motoboy': 'Motoboy',
   '/drivers/bikeboy': 'Bikeboy',
   '/drivers/mototaxi': 'Mototáxi',
