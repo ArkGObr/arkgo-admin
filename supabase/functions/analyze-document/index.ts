@@ -322,9 +322,20 @@ async function applyExtractedData(review: Review, extracted: Record<string, unkn
     if (isReleased) {
       userUpdate.is_released = true;
       userUpdate.status = 'active';
+      userUpdate.block_reason = null; // Limpa o motivo do bloqueio
     } else {
+      const friendlyDetails = validationNotes.map(n => {
+        if (n.includes("CPF")) return "o CPF informado possui uma inconsistência matemática nos dígitos";
+        if (n.includes("CNH")) return "a CNH informada possui uma inconsistência matemática nos dígitos";
+        if (n.includes("Placa")) return "a placa do veículo possui um formato inválido";
+        return n.toLowerCase();
+      }).join(" e ");
+
+      const friendlyMsg = `Olá! Notamos que ${friendlyDetails}. Por favor, revise os dados digitados e reenvie uma foto bem nítida e legível do seu documento para podermos liberar seu acesso rapidamente. Obrigado!`;
+      
       userUpdate.is_released = false;
       userUpdate.status = 'inactive';
+      userUpdate.block_reason = friendlyMsg; // Mensagem amigável para exibição no aplicativo do motorista
       
       // Salva o erro na própria revisão para dar feedback imediato
       await supabase
