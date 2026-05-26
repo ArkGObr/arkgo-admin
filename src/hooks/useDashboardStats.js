@@ -47,7 +47,7 @@ export function useDashboardStats() {
         supabase.from('deliveries').select('value, commission').eq('status', 'completed'),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'client'),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'motoboy'),
-        supabase.from('Motoboy').select('id', { count: 'exact' }).eq('is_online', true),
+        supabase.from('motoboys').select('id', { count: 'exact' }).eq('is_online', true),
         supabase.from('recharges').select('amount').eq('gateway_status', 'confirmed'),
         supabase.from('recharges').select('id', { count: 'exact' }).eq('gateway_status', 'pending'),
       ]);

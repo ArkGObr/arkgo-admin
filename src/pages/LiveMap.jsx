@@ -38,8 +38,8 @@ function createMotoboyIcon(isOnline) {
 }
 
 export default function LiveMap() {
-  const { data: Motoboy, refetch: refetchMotoboy } = useSupabase('Motoboy', {
-    select: '*, users!Motoboy_id_fkey(name, phone)',
+  const { data: Motoboy, refetch: refetchMotoboy } = useSupabase('motoboys', {
+    select: '*, users(name, phone)',
   });
 
   const { data: activeDeliveries, refetch: refetchDeliveries } = useSupabase('deliveries', {
@@ -53,7 +53,7 @@ export default function LiveMap() {
     ],
   });
 
-  useRealtime('Motoboy', {
+  useRealtime('motoboys', {
     onUpdate: () => refetchMotoboy(),
   });
 

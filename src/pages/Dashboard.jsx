@@ -81,7 +81,7 @@ export default function Dashboard() {
     onUpdate: () => { refetch(); refetchRecent(); },
   });
 
-  useRealtime('Motoboy', {
+  useRealtime('motoboys', {
     onUpdate: () => refetch(),
   });
 
