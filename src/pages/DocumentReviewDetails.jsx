@@ -18,6 +18,7 @@ import Badge from '../components/ui/Badge';
 import Button from '../components/ui/Button';
 import { supabase } from '../lib/supabase';
 import { formatDateTime } from '../utils/formatDate';
+import { validateCPF, validateCNH, validatePlate } from '../utils/validators';
 import './DocumentReviews.css';
 import './DocumentReviewDetails.css';
 
@@ -31,6 +32,39 @@ const STATUS_META = {
 function ReviewBadge({ status }) {
   const meta = STATUS_META[status] || STATUS_META.pending;
   return <Badge label={meta.label} color={meta.color} bg={meta.bg} border={meta.border} />;
+}
+
+function renderFieldWarning(key, val) {
+  if (!val) return null;
+  
+  if (key === 'document_number') {
+    const clean = String(val).replace(/[^\d]/g, '');
+    if (clean.length === 11 && !validateCPF(val)) {
+      return (
+        <span className="field-validation-error" style={{ color: 'var(--error)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontWeight: 500 }}>
+          <AlertCircle size={12} /> CPF matematicamente inválido
+        </span>
+      );
+    }
+  }
+  
+  if (key === 'cnh_number' && !validateCNH(val)) {
+    return (
+      <span className="field-validation-error" style={{ color: 'var(--error)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontWeight: 500 }}>
+        <AlertCircle size={12} /> CNH matematicamente inválida
+      </span>
+    );
+  }
+  
+  if (key === 'vehicle_plate' && !validatePlate(val)) {
+    return (
+      <span className="field-validation-error" style={{ color: 'var(--warning)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, marginTop: 4, fontWeight: 500 }}>
+        <AlertCircle size={12} /> Placa com formato inválido
+      </span>
+    );
+  }
+  
+  return null;
 }
 
 export default function DocumentReviewDetails() {
@@ -203,6 +237,32 @@ export default function DocumentReviewDetails() {
       Object.entries(editData).forEach(([k, v]) => {
         try { parsed[k] = JSON.parse(v); } catch { parsed[k] = v; }
       });
+      
+      // Validações antes de salvar
+      const validationAlerts = [];
+      if (parsed.document_number) {
+        const clean = String(parsed.document_number).replace(/[^\d]/g, '');
+        if (clean.length === 11 && !validateCPF(parsed.document_number)) {
+          validationAlerts.push("• O CPF inserido é matematicamente inválido.");
+        }
+      }
+      if (parsed.cnh_number && !validateCNH(parsed.cnh_number)) {
+        validationAlerts.push("• O número de CNH inserido é matematicamente inválido.");
+      }
+      if (parsed.vehicle_plate && !validatePlate(parsed.vehicle_plate)) {
+        validationAlerts.push("• O formato da Placa inserida é inválido.");
+      }
+      
+      if (validationAlerts.length > 0) {
+        const confirmSave = window.confirm(
+          `Aviso de Validação:\n\n${validationAlerts.join('\n')}\n\nDeseja salvar mesmo assim?`
+        );
+        if (!confirmSave) {
+          setSaveLoading(false);
+          return;
+        }
+      }
+
       const { error: updError } = await supabase
         .from('document_ai_reviews')
         .update({ extracted_data: parsed })
@@ -433,14 +493,30 @@ export default function DocumentReviewDetails() {
                 </div>
               ) : (
                 <div className="dr-analysis-grid">
-                  {Object.entries(analysis).map(([key, val]) => (
-                    <div key={key} className="dr-analysis-item">
-                      <span className="dr-analysis-label">{key.replace(/_/g, ' ')}</span>
-                      <span className="dr-analysis-value">
-                        {typeof val === 'object' ? JSON.stringify(val) : String(val ?? '—')}
-                      </span>
-                    </div>
-                  ))}
+                  {Object.entries(analysis).map(([key, val]) => {
+                    const isCpfInvalid = key === 'document_number' && val && String(val).replace(/[^\d]/g, '').length === 11 && !validateCPF(val);
+                    const isCnhInvalid = key === 'cnh_number' && val && !validateCNH(val);
+                    const isPlateInvalid = key === 'vehicle_plate' && val && !validatePlate(val);
+                    const hasError = isCpfInvalid || isCnhInvalid || isPlateInvalid;
+                    
+                    return (
+                      <div 
+                        key={key} 
+                        className={`dr-analysis-item${hasError ? ' dr-analysis-item--invalid' : ''}`}
+                        style={hasError ? { 
+                          borderLeft: `3px solid ${isPlateInvalid ? 'var(--warning)' : 'var(--error)'}`, 
+                          paddingLeft: '10px',
+                          background: isPlateInvalid ? 'rgba(255, 184, 0, 0.03)' : 'rgba(255, 59, 59, 0.03)'
+                        } : undefined}
+                      >
+                        <span className="dr-analysis-label">{key.replace(/_/g, ' ')}</span>
+                        <span className="dr-analysis-value" style={hasError ? { color: isPlateInvalid ? 'var(--warning)' : 'var(--error)', fontWeight: 600 } : undefined}>
+                          {typeof val === 'object' ? JSON.stringify(val) : String(val ?? '—')}
+                        </span>
+                        {renderFieldWarning(key, val)}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

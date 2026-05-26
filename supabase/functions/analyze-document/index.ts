@@ -201,16 +201,137 @@ async function saveFailure(review: Review, errorMessage: string) {
     .eq('id', review.id);
 }
 
+function validateCPF(cpf: unknown): boolean {
+  if (!cpf) return false;
+  const clean = String(cpf).replace(/[^\d]/g, '');
+  if (clean.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(clean)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(clean.charAt(i), 10) * (10 - i);
+  }
+  let rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(9), 10)) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(clean.charAt(i), 10) * (11 - i);
+  }
+  rev = 11 - (sum % 11);
+  if (rev === 10 || rev === 11) rev = 0;
+  if (rev !== parseInt(clean.charAt(10), 10)) return false;
+
+  return true;
+}
+
+function validateCNH(cnh: unknown): boolean {
+  if (!cnh) return false;
+  const clean = String(cnh).replace(/[^\d]/g, '');
+  if (clean.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(clean)) return false;
+
+  let v = 0;
+  for (let i = 0, j = 9; i < 9; ++i, --j) {
+    v += parseInt(clean.charAt(i), 10) * j;
+  }
+  
+  let vl1 = v % 11;
+  let dsc = (vl1 >= 10) ? 0 : vl1;
+  
+  if (dsc !== parseInt(clean.charAt(9), 10)) {
+    return false;
+  }
+  
+  v = 0;
+  for (let i = 0, j = 1; i < 9; ++i, ++j) {
+    v += parseInt(clean.charAt(i), 10) * j;
+  }
+  
+  let x = v % 11;
+  let vl2 = (x >= 10) ? 0 : x;
+  
+  if (vl1 >= 10) {
+    if (vl2 >= 0 && vl2 <= 2) {
+      vl2 = 0;
+    } else {
+      vl2 = vl2 - 2;
+    }
+  }
+  
+  return dsc.toString() + vl2.toString() === clean.substring(9, 11);
+}
+
+function validatePlate(plate: unknown): boolean {
+  if (!plate) return false;
+  const clean = String(plate).toUpperCase().replace(/[-\s]/g, '');
+  const regexTraditional = /^[A-Z]{3}[0-9]{4}$/;
+  const regexMercosul = /^[A-Z]{3}[0-9]{1}[A-Z]{1}[0-9]{2}$/;
+  return regexTraditional.test(clean) || regexMercosul.test(clean);
+}
+
 async function applyExtractedData(review: Review, extracted: Record<string, unknown>) {
+  let isReleased = true;
+  const validationNotes: string[] = [];
+
+  // 1. Validar CPF se extraído
+  if (extracted.document_number) {
+    const cleanDoc = String(extracted.document_number).replace(/[^\d]/g, '');
+    if (cleanDoc.length === 11) {
+      if (!validateCPF(extracted.document_number)) {
+        isReleased = false;
+        validationNotes.push("CPF extraído possui dígito verificador inválido.");
+      }
+    }
+  }
+
+  // 2. Validar CNH se extraída
+  if (extracted.cnh_number) {
+    if (!validateCNH(extracted.cnh_number)) {
+      isReleased = false;
+      validationNotes.push("CNH extraída possui dígito verificador inválido.");
+    }
+  }
+
+  // 3. Validar Placa se extraída
+  if (extracted.vehicle_plate) {
+    if (!validatePlate(extracted.vehicle_plate)) {
+      validationNotes.push("Placa do veículo extraída possui formato inválido.");
+    }
+  }
+
+  // Se houver algum alerta ou documento inválido, anota no campo notes e salva no banco
+  if (validationNotes.length > 0) {
+    const existingNotes = extracted.notes ? String(extracted.notes) : '';
+    extracted.notes = (existingNotes ? existingNotes + " | " : "") + "[ALERTA DE SEGURANÇA] " + validationNotes.join(" ");
+    
+    await supabase
+      .from('document_ai_reviews')
+      .update({ extracted_data: extracted })
+      .eq('id', review.id);
+  }
+
   if (review.user_id) {
     const userUpdate = compact({
       name: extracted.full_name,
       document: extracted.document_number,
-    });
+    }) as Record<string, unknown>;
 
-    // Libera o motorista e ativa sua conta automaticamente após a análise com sucesso
-    userUpdate.is_released = true;
-    userUpdate.status = 'active';
+    // Só libera automaticamente se todas as validações de segurança passaram
+    if (isReleased) {
+      userUpdate.is_released = true;
+      userUpdate.status = 'active';
+    } else {
+      userUpdate.is_released = false;
+      userUpdate.status = 'inactive';
+      
+      // Salva o erro na própria revisão para dar feedback imediato
+      await supabase
+        .from('document_ai_reviews')
+        .update({ status: 'failed', error_message: `Falha na validação automática: ${validationNotes.join(' ')}` })
+        .eq('id', review.id);
+    }
 
     await supabase.from('users').update(userUpdate).eq('id', review.user_id);
   }
