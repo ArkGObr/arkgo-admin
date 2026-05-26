@@ -44,7 +44,8 @@ export default function DocumentReviewDetails() {
   const [files, setFiles]               = useState([]);
   const [filesLoading, setFilesLoading] = useState(true);
   const [filesError, setFilesError]     = useState('');
-  const [previewUrl, setPreviewUrl]     = useState(null);
+  const [previewData, setPreviewData]   = useState(null);
+  const [lightboxData, setLightboxData] = useState(null);
 
   const [editMode, setEditMode]   = useState(false);
   const [editData, setEditData]   = useState({});
@@ -74,7 +75,7 @@ export default function DocumentReviewDetails() {
     fetchRecord();
   }, [id]);
 
-  // Load bucket files
+  // Load bucket files — listagem recursiva que entra em subpastas
   useEffect(() => {
     if (!row) return;
 
@@ -83,60 +84,81 @@ export default function DocumentReviewDetails() {
       setFilesError('');
       try {
         let found = [];
+
+        // Classifica arquivo por nome e metadata
+        function classify(name, metadata) {
+          const mime = metadata?.mimetype || metadata?.contentType || '';
+          const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(name) || mime.startsWith('image/');
+          const isPdf   = /\.pdf$/i.test(name) || mime === 'application/pdf';
+          // sem mime conhecida → trata como imagem (selfie, vehicle-document, etc.)
+          const looksLikeMedia = !isImage && !isPdf;
+          return { isImage: isImage || looksLikeMedia, isPdf };
+        }
+
+        // Listagem recursiva: desce em pastas automaticamente
+        async function listRecursive(bucket, prefix, depth = 0) {
+          if (depth > 3) return;
+          const { data, error } = await supabase.storage.from(bucket).list(prefix, { limit: 50 });
+          if (error || !data) return;
+
+          const realFiles  = data.filter(f => f.name && f.id);   // id presente → arquivo
+          const subFolders = data.filter(f => f.name && !f.id);  // id ausente  → pasta
+
+          await Promise.all(realFiles.map(async f => {
+            const fullPath = `${prefix}/${f.name}`;
+            if (found.some(x => x.fullPath === fullPath)) return;
+
+            const { isImage, isPdf } = classify(f.name, f.metadata);
+
+            const { data: urlData } = await supabase.storage
+              .from(bucket)
+              .createSignedUrl(fullPath, 3600, { download: false });
+
+            if (!urlData?.signedUrl) return;
+
+            found.push({
+              ...f,
+              fullPath,
+              bucket,
+              folder: prefix.split('/').pop(), // nome da pasta pai (ex: selfie, vehicle-document)
+              signedUrl: urlData.signedUrl,
+              isImage,
+              isPdf,
+            });
+          }));
+
+          // Desce nas subpastas
+          for (const folder of subFolders) {
+            await listRecursive(bucket, `${prefix}/${folder.name}`, depth + 1);
+          }
+        }
+
+        // 1. Se o registro tem um file_path direto, inclui ele
         if (row.storage_bucket && row.file_path) {
           const { data: urlData, error: urlError } = await supabase.storage
             .from(row.storage_bucket)
-            .createSignedUrl(row.file_path, 3600);
-          
+            .createSignedUrl(row.file_path, 3600, { download: false });
           if (!urlError && urlData?.signedUrl) {
             const fileName = row.file_path.split('/').pop() || 'documento';
-            const isImage = /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(fileName) || 
-                            (row.mime_type && row.mime_type.startsWith('image/'));
-            
-            const fileObj = {
-              name: fileName,
-              fullPath: row.file_path,
-              signedUrl: urlData.signedUrl,
-              isImage,
-              isPrimary: true
-            };
-            found.push(fileObj);
-            
-            if (isImage) setPreviewUrl(urlData.signedUrl);
+            const { isImage, isPdf } = classify(fileName, { mimetype: row.mime_type });
+            if (!found.some(x => x.fullPath === row.file_path)) {
+              found.push({ name: fileName, fullPath: row.file_path, signedUrl: urlData.signedUrl, isImage, isPdf, isPrimary: true });
+            }
           }
         }
 
-        const paths = [
-          row.user_id,
-          row.id,
-          `documents/${row.user_id}`,
-          `documents/${row.id}`,
-        ].filter(Boolean);
-
-        for (const prefix of paths) {
-          const { data, error } = await supabase.storage.from('documents').list(prefix, { limit: 10 });
-          if (!error && data?.length) {
-            const withUrls = await Promise.all(
-              data.filter(f => f.name && !f.name.endsWith('/')).map(async f => {
-                const fullPath = `${prefix}/${f.name}`;
-                if (found.some(item => item.fullPath === fullPath)) return null;
-                const { data: urlData } = await supabase.storage.from('documents').createSignedUrl(fullPath, 3600);
-                return {
-                  ...f,
-                  fullPath,
-                  signedUrl: urlData?.signedUrl || null,
-                  isImage: /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(f.name),
-                };
-              })
-            );
-            found = [...found, ...withUrls.filter(Boolean)];
+        // 2. Varre driver-documents/{user_id} recursivamente
+        if (row.user_id) {
+          const buckets = ['driver-documents', row.storage_bucket].filter(Boolean);
+          for (const bucket of [...new Set(buckets)]) {
+            await listRecursive(bucket, row.user_id);
           }
         }
+
         setFiles(found);
-        
-        if (found.length > 0 && !previewUrl) {
-          const firstImg = found.find(f => f.isImage);
-          if (firstImg) setPreviewUrl(firstImg.signedUrl);
+        if (found.length > 0 && !previewData) {
+          const first = found.find(f => f.isImage || f.isPdf);
+          if (first) setPreviewData({ url: first.signedUrl, type: first.isPdf ? 'pdf' : 'image' });
         }
       } catch (err) {
         setFilesError(err.message);
@@ -291,12 +313,33 @@ export default function DocumentReviewDetails() {
         {/* Left Column: Image Viewer */}
         <div className="drd-left">
           <div className="drd-viewer">
-            {previewUrl ? (
-              <div className="drd-viewer-container">
-                <img src={previewUrl} alt="Visualização do Documento" className="drd-viewer-img" />
-                <div className="drd-viewer-actions">
-                  <a href={previewUrl} target="_blank" rel="noreferrer" className="drd-viewer-btn">
-                    <ExternalLink size={14} /> Abrir documento original
+            {previewData ? (
+              <div className="drd-viewer-container" style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {previewData.type === 'pdf' ? (
+                  <iframe src={previewData.url} title="PDF Document" className="drd-viewer-pdf" style={{ width: '100%', flex: 1, border: 'none', minHeight: 400 }} />
+                ) : (
+                  <img 
+                    src={previewData.url} 
+                    alt="Visualização do Documento" 
+                    className="drd-viewer-img" 
+                    onClick={() => setLightboxData(previewData)}
+                    style={{ cursor: 'zoom-in' }}
+                    onError={e => {
+                      // Se a imagem falhar, renderiza via iframe como PDF viewer
+                      e.currentTarget.style.display = 'none';
+                      const iframe = document.createElement('iframe');
+                      iframe.src = previewData.url;
+                      iframe.style.cssText = 'width:100%;flex:1;border:none;min-height:400px';
+                      e.currentTarget.parentNode.insertBefore(iframe, e.currentTarget);
+                    }}
+                  />
+                )}
+                <div className="drd-viewer-actions" style={{ gap: '10px' }}>
+                  <button className="drd-viewer-btn" onClick={() => setLightboxData(previewData)} style={{ cursor: 'pointer' }}>
+                    <ExternalLink size={14} /> Ampliar Tela Cheia
+                  </button>
+                  <a href={previewData.url} target="_blank" rel="noreferrer" className="drd-viewer-btn">
+                    <ExternalLink size={14} /> Abrir Nova Guia
                   </a>
                 </div>
               </div>
@@ -444,28 +487,38 @@ export default function DocumentReviewDetails() {
             )}
             {!filesLoading && files.length > 0 && (
               <div className="dr-files-grid">
-                {files.map(file => (
-                  <div key={file.fullPath} className="dr-file-card">
-                    <div
-                      className="dr-file-preview"
-                      onClick={() => file.isImage && setPreviewUrl(file.signedUrl)}
-                      style={{ cursor: file.isImage ? 'zoom-in' : 'default' }}
+                {files.map(file => {
+                  const viewType = file.isPdf ? 'pdf' : 'image';
+                  const isActive = previewData?.url === file.signedUrl;
+                  return (
+                    <button
+                      key={file.fullPath}
+                      className={`drd-doc-card${isActive ? ' drd-doc-card--active' : ''}`}
+                      onClick={() => setPreviewData({ url: file.signedUrl, type: viewType })}
+                      title={file.name}
                     >
-                      {file.isImage ? <img src={file.signedUrl} alt={file.name} /> : <div className="dr-file-icon"><FileText size={28} /></div>}
-                    </div>
-                    <div className="dr-file-info">
-                      <span className="dr-file-name" title={file.name}>{file.name}</span>
-                      <span className="dr-file-size">
-                        {file.metadata?.size ? `${(file.metadata.size / 1024).toFixed(1)} KB` : '—'}
-                      </span>
-                    </div>
-                    {file.signedUrl && (
-                      <a className="dr-file-open" href={file.signedUrl} target="_blank" rel="noreferrer">
-                        <ExternalLink size={13} /> Abrir
-                      </a>
-                    )}
-                  </div>
-                ))}
+                      <div className="drd-doc-card-thumb">
+                        {file.isImage ? (
+                          <img
+                            src={file.signedUrl}
+                            alt={file.name}
+                            onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                          />
+                        ) : null}
+                        <div className="drd-doc-card-icon" style={{ display: file.isImage ? 'none' : 'flex' }}>
+                          <FileText size={28} />
+                          <span className="drd-doc-card-tag">{file.isPdf ? 'PDF' : 'FILE'}</span>
+                        </div>
+                      </div>
+                      <div className="drd-doc-card-label">
+                        <span className="drd-doc-card-name" title={file.name}>{file.name}</span>
+                        {file.metadata?.size && (
+                          <span className="drd-doc-card-size">{(file.metadata.size / 1024).toFixed(1)} KB</span>
+                        )}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             )}
           </div>
@@ -473,10 +526,30 @@ export default function DocumentReviewDetails() {
       </div>
 
       {/* Lightbox for full screen preview inside page */}
-      {previewUrl && (
-        <div className="dr-lightbox" onClick={e => { e.stopPropagation(); setPreviewUrl(null); }}>
-          <img src={previewUrl} alt="preview" onClick={e => e.stopPropagation()} />
-          <button className="dr-lightbox-close" onClick={() => setPreviewUrl(null)}>
+      {lightboxData && (
+        <div className="dr-lightbox" onClick={() => setLightboxData(null)}>
+          {lightboxData.type === 'pdf' ? (
+            <iframe 
+              src={lightboxData.url} 
+              title="PDF Preview" 
+              onClick={e => e.stopPropagation()} 
+              style={{ width: '85%', height: '92%', border: 'none', background: 'white', borderRadius: '8px' }} 
+            />
+          ) : (
+            <img 
+              src={lightboxData.url} 
+              alt="preview" 
+              onClick={e => e.stopPropagation()}
+              onError={e => {
+                // fallback: troca por iframe se a img falhar
+                const iframe = document.createElement('iframe');
+                iframe.src = lightboxData.url;
+                iframe.style.cssText = 'width:85%;height:92%;border:none;background:white;border-radius:8px';
+                e.currentTarget.parentNode.replaceChild(iframe, e.currentTarget);
+              }}
+            />
+          )}
+          <button className="dr-lightbox-close" onClick={() => setLightboxData(null)}>
             <X size={20} />
           </button>
         </div>
