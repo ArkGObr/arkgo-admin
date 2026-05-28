@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
+const DEFAULT_FILTERS = [];
+const DEFAULT_ORDER = { column: 'created_at', ascending: false };
+
 /**
  * Generic hook for Supabase queries with loading/error state.
  * @param {string} table - Table name
@@ -13,15 +16,12 @@ export function useSupabase(table, options = {}) {
 
   const {
     select = '*',
-    filters = [],
-    order = { column: 'created_at', ascending: false },
+    filters = DEFAULT_FILTERS,
+    order = DEFAULT_ORDER,
     limit,
     single = false,
     enabled = true,
   } = options;
-
-  const filtersKey = JSON.stringify(filters);
-  const orderKey = JSON.stringify(order);
 
   const fetchData = useCallback(async () => {
     if (!enabled) {
@@ -78,10 +78,10 @@ export function useSupabase(table, options = {}) {
     } finally {
       setLoading(false);
     }
-  }, [table, select, filtersKey, orderKey, limit, single, enabled]);
+  }, [table, select, filters, order, limit, single, enabled]);
 
   useEffect(() => {
-    fetchData();
+    queueMicrotask(fetchData);
 
     const handleRefresh = () => {
       fetchData();

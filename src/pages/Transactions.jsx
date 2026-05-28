@@ -23,7 +23,9 @@ export default function Transactions() {
   const totals = (data || []).reduce(
     (acc, t) => {
       if (t.type === 'recharge') acc.recharges += t.amount;
-      if (t.type === 'commission_debit') acc.commissions += Math.abs(t.amount);
+      if (['commission_debit', 'delivery_commission'].includes(t.type)) {
+        acc.commissions += Math.abs(t.amount);
+      }
       return acc;
     },
     { recharges: 0, commissions: 0 }
@@ -74,7 +76,7 @@ export default function Transactions() {
       key: 'balance_after',
       label: 'Saldo Após',
       className: 'text-numeric',
-      render: row => formatCurrency(row.balance_after),
+      render: row => formatCurrency(row.balance_after ?? row.current_balance),
     },
     {
       key: 'description',

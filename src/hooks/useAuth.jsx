@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+/* eslint-disable react-refresh/only-export-components */
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
 const AuthContext = createContext(null);
@@ -8,31 +9,49 @@ export function AuthProvider({ children }) {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const fetchProfile = useCallback(async (userId) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.role !== 'admin') {
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        return;
+      }
+
+      setProfile(data);
+    } catch (err) {
+      console.error('Error fetching profile:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
-    // Safety net: in some browsers/scenarios, Supabase auth lock gets stuck on hard refresh
     const safetyTimeout = setTimeout(() => {
-      if (isMounted && loading) {
-        setLoading(false);
-      }
+      if (isMounted) setLoading(false);
     }, 1500);
 
-    // Enforce "Keep me signed in" policy
     const remembered = localStorage.getItem('arkgo_remember_me') === 'true';
     const hasActiveSession = sessionStorage.getItem('arkgo_session_active') === 'true';
-    
+
     if (!remembered && !hasActiveSession) {
-      // Tab was closed and "Remember me" wasn't checked. End session locally.
       supabase.auth.signOut().finally(() => {
         if (isMounted) setLoading(false);
       });
       clearTimeout(safetyTimeout);
-      // We do NOT return here, otherwise we skip initializing the onAuthStateChange listener needed for login!
     } else {
-      // Tag this tab as active
       sessionStorage.setItem('arkgo_session_active', 'true');
 
-      // Check existing session only if we are allowed to keep it
       supabase.auth.getSession()
         .then(({ data: { session } }) => {
           clearTimeout(safetyTimeout);
@@ -51,7 +70,6 @@ export function AuthProvider({ children }) {
         });
     }
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === 'SIGNED_IN' && session?.user) {
@@ -60,6 +78,7 @@ export function AuthProvider({ children }) {
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
+          setLoading(false);
         }
       }
     );
@@ -69,35 +88,7 @@ export function AuthProvider({ children }) {
       clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
-  }, []);
-
-  async function fetchProfile(userId) {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error) throw error;
-      
-      if (data?.role !== 'admin') {
-        // Not an admin — sign out
-        await supabase.auth.signOut();
-        setUser(null);
-        setProfile(null);
-        setLoading(false);
-        return;
-      }
-
-      setProfile(data);
-    } catch (err) {
-      console.error('Error fetching profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  }, [fetchProfile]);
 
   async function signIn(email, password, rememberMe = false) {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -105,14 +96,14 @@ export function AuthProvider({ children }) {
       password,
     });
     if (error) throw error;
-    
+
     if (rememberMe) {
       localStorage.setItem('arkgo_remember_me', 'true');
     } else {
       localStorage.removeItem('arkgo_remember_me');
     }
     sessionStorage.setItem('arkgo_session_active', 'true');
-    
+
     return data;
   }
 
@@ -122,16 +113,17 @@ export function AuthProvider({ children }) {
     sessionStorage.removeItem('arkgo_session_active');
     setUser(null);
     setProfile(null);
+    setLoading(false);
   }
 
-  const value = {
+  const value = useMemo(() => ({
     user,
     profile,
     loading,
     signIn,
     signOut,
     isAdmin: profile?.role === 'admin',
-  };
+  }), [user, profile, loading]);
 
   return (
     <AuthContext.Provider value={value}>

@@ -1,9 +1,8 @@
-import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, CircleMarker } from 'react-leaflet';
 import L from 'leaflet';
 import { useSupabase } from '../hooks/useSupabase';
 import { useRealtime } from '../hooks/useRealtime';
-import { VEHICLE_CATEGORIES, DELIVERY_STATUSES } from '../utils/constants';
+import { getDriverBalance, isDriverOnline, VEHICLE_CATEGORIES, DELIVERY_STATUSES } from '../utils/constants';
 import { formatCurrency } from '../utils/formatCurrency';
 import 'leaflet/dist/leaflet.css';
 
@@ -38,7 +37,7 @@ function createMotoboyIcon(isOnline) {
 }
 
 export default function LiveMap() {
-  const { data: Motoboy, refetch: refetchMotoboy } = useSupabase('motoboys', {
+  const { data: motoboys, refetch: refetchMotoboys } = useSupabase('motoboys', {
     select: '*, users(name, phone)',
   });
 
@@ -54,7 +53,7 @@ export default function LiveMap() {
   });
 
   useRealtime('motoboys', {
-    onUpdate: () => refetchMotoboy(),
+    onUpdate: () => refetchMotoboys(),
   });
 
   useRealtime('deliveries', {
@@ -62,10 +61,12 @@ export default function LiveMap() {
     onUpdate: () => refetchDeliveries(),
   });
 
-  const motoboyList = (Motoboy || []).filter(
+  const motoboyList = (motoboys || []).filter(
     m => m.current_lat && m.current_lng
   );
-  const onlineCount = (Motoboy || []).filter(m => m.is_online).length;
+  const pickupDeliveries = (activeDeliveries || []).filter(d => d.pickup_lat && d.pickup_lng);
+  const destinationDeliveries = (activeDeliveries || []).filter(d => d.delivery_lat && d.delivery_lng);
+  const onlineCount = (motoboys || []).filter(isDriverOnline).length;
 
   // Default center: Goiânia, GO
   const center = [-16.6869, -49.2648];
@@ -105,7 +106,7 @@ export default function LiveMap() {
             <Marker
               key={m.id}
               position={[m.current_lat, m.current_lng]}
-              icon={createMotoboyIcon(m.is_online)}
+              icon={createMotoboyIcon(isDriverOnline(m))}
             >
               <Popup>
                 <div style={{ fontFamily: 'DM Sans, sans-serif', fontSize: 13 }}>
@@ -115,18 +116,18 @@ export default function LiveMap() {
                     {VEHICLE_CATEGORIES[m.vehicle_category] || m.vehicle_category}
                   </span>
                   <br />
-                  <span style={{ color: m.is_online ? '#99EB09' : '#666' }}>
-                    {m.is_online ? '● Online' : '○ Offline'}
+                  <span style={{ color: isDriverOnline(m) ? '#99EB09' : '#666' }}>
+                    {isDriverOnline(m) ? '● Online' : '○ Offline'}
                   </span>
                   <br />
-                  <span>Saldo: {formatCurrency(m.wallet_balance)}</span>
+                  <span>Saldo: {formatCurrency(getDriverBalance(m))}</span>
                 </div>
               </Popup>
             </Marker>
           ))}
 
           {/* Active deliveries - pickup points */}
-          {(activeDeliveries || []).map(d => (
+          {pickupDeliveries.map(d => (
             <CircleMarker
               key={`pickup-${d.id}`}
               center={[d.pickup_lat, d.pickup_lng]}
@@ -149,7 +150,7 @@ export default function LiveMap() {
           ))}
 
           {/* Active deliveries - delivery points */}
-          {(activeDeliveries || []).map(d => (
+          {destinationDeliveries.map(d => (
             <CircleMarker
               key={`delivery-${d.id}`}
               center={[d.delivery_lat, d.delivery_lng]}

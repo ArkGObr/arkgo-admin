@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   AlertCircle,
@@ -88,7 +88,7 @@ export default function DocumentReviewDetails() {
   const [runningId, setRunningId]   = useState('');
 
   // Fetch record
-  async function fetchRecord() {
+  const fetchRecord = useCallback(async () => {
     setLoading(true);
     setErrorMsg('');
     const { data, error } = await supabase
@@ -103,11 +103,11 @@ export default function DocumentReviewDetails() {
       setRow(data);
     }
     setLoading(false);
-  }
+  }, [id]);
 
   useEffect(() => {
-    fetchRecord();
-  }, [id]);
+    queueMicrotask(fetchRecord);
+  }, [fetchRecord]);
 
   // Load bucket files — listagem recursiva que entra em subpastas
   useEffect(() => {
@@ -190,9 +190,11 @@ export default function DocumentReviewDetails() {
         }
 
         setFiles(found);
-        if (found.length > 0 && !previewData) {
+        if (found.length > 0) {
           const first = found.find(f => f.isImage || f.isPdf);
-          if (first) setPreviewData({ url: first.signedUrl, type: first.isPdf ? 'pdf' : 'image' });
+          if (first) {
+            setPreviewData(prev => prev ?? { url: first.signedUrl, type: first.isPdf ? 'pdf' : 'image' });
+          }
         }
       } catch (err) {
         setFilesError(err.message);
@@ -201,7 +203,7 @@ export default function DocumentReviewDetails() {
       }
     }
     loadFiles();
-  }, [row?.id, row?.user_id, row?.storage_bucket, row?.file_path]);
+  }, [row]);
 
   if (loading) return <div style={{ padding: 40, color: 'var(--text-secondary)' }}>Carregando documento...</div>;
   if (errorMsg) return <div className="ops-error" style={{ padding: 40 }}>Erro: {errorMsg}</div>;

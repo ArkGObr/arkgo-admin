@@ -378,14 +378,16 @@ function LeadModal({ row, onClose, onUpdateInterest, onUpdateAtendimento, onUpda
   const [error, setError]                           = useState('');
 
   useEffect(() => {
-    setCurrentInterest(row.interest);
-    setCurrentAtendimento(getLeadStatus(row.message));
-    setEditFields({
-      name: row.name || '',
-      email: row.email || '',
-      phone: row.phone || '',
-      city: row.city || '',
-      message: getCleanMessage(row.message),
+    queueMicrotask(() => {
+      setCurrentInterest(row.interest);
+      setCurrentAtendimento(getLeadStatus(row.message));
+      setEditFields({
+        name: row.name || '',
+        email: row.email || '',
+        phone: row.phone || '',
+        city: row.city || '',
+        message: getCleanMessage(row.message),
+      });
     });
   }, [row]);
 
@@ -458,8 +460,6 @@ function LeadModal({ row, onClose, onUpdateInterest, onUpdateAtendimento, onUpda
   };
 
   const metaInterest = INTEREST_META[currentInterest] || INTEREST_META.fila;
-  const metaAtendimento = ATENDIMENTO_OPTIONS.find(o => o.value === currentAtendimento) || ATENDIMENTO_OPTIONS[1];
-
   return (
     <div className="ll-modal-overlay" onClick={onClose}>
       <div className="ll-modal" onClick={e => e.stopPropagation()}>
