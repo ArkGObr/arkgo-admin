@@ -49,5 +49,5 @@ export function useRealtime(table, { onInsert, onUpdate, onDelete, filter } = {}
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [table, filter]);
+  }, [table, filter, onInsert, onUpdate, onDelete]);
 }

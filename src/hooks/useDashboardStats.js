@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { isDriverOnline } from '../utils/constants';
 
 /**
  * Hook for fetching aggregated dashboard statistics.
@@ -37,28 +38,27 @@ export function useDashboardStats() {
         deliveriesTodayRes,
         completedRes,
         clientsRes,
-        MotoboyRes,
-        onlineRes,
+        motoboysRes,
         rechargesRes,
-        pendingRechargesRes,
       ] = await Promise.all([
         supabase.from('deliveries').select('id, status, value, commission', { count: 'exact' }),
         supabase.from('deliveries').select('id', { count: 'exact' }).gte('created_at', todayISO),
         supabase.from('deliveries').select('value, commission').eq('status', 'completed'),
         supabase.from('users').select('id', { count: 'exact' }).eq('role', 'client'),
-        supabase.from('users').select('id', { count: 'exact' }).eq('role', 'motoboy'),
-        supabase.from('motoboys').select('id', { count: 'exact' }).eq('is_online', true),
-        supabase.from('recharges').select('amount').eq('gateway_status', 'confirmed'),
-        supabase.from('recharges').select('id', { count: 'exact' }).eq('gateway_status', 'pending'),
+        supabase.from('motoboys').select('*', { count: 'exact' }),
+        supabase.from('recharges').select('*'),
       ]);
 
       const allDeliveries = deliveriesRes.data || [];
       const completed = completedRes.data || [];
+      const motoboys = motoboysRes.data || [];
       const rechargesData = rechargesRes.data || [];
 
       const totalRevenue = completed.reduce((sum, d) => sum + (d.value || 0), 0);
       const totalCommission = completed.reduce((sum, d) => sum + (d.commission || 0), 0);
-      const totalRecharges = rechargesData.reduce((sum, r) => sum + (r.amount || 0), 0);
+      const confirmedRecharges = rechargesData.filter(r => (r.gateway_status ?? r.status) === 'confirmed');
+      const totalRecharges = confirmedRecharges.reduce((sum, r) => sum + (r.amount || 0), 0);
+      const pendingRecharges = rechargesData.filter(r => (r.gateway_status ?? r.status) === 'pending').length;
 
       const active = allDeliveries.filter(
         d => ['pending', 'accepted', 'in_progress'].includes(d.status)
@@ -74,10 +74,10 @@ export function useDashboardStats() {
         totalRevenue,
         totalCommission,
         totalClients: clientsRes.count || 0,
-        totalMotoboy: MotoboyRes.count || 0,
-        onlineMotoboy: onlineRes.count || 0,
+        totalMotoboy: motoboysRes.count || motoboys.length,
+        onlineMotoboy: motoboys.filter(isDriverOnline).length,
         totalRecharges,
-        pendingRecharges: pendingRechargesRes.count || 0,
+        pendingRecharges,
         avgTicket: completed.length > 0 ? totalRevenue / completed.length : 0,
         cancellationRate:
           allDeliveries.length > 0
@@ -93,7 +93,7 @@ export function useDashboardStats() {
   }, [todayISO]);
 
   useEffect(() => {
-    fetchStats();
+    queueMicrotask(fetchStats);
 
     const handleRefresh = () => {
       fetchStats();

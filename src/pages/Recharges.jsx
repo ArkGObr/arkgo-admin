@@ -8,6 +8,7 @@ import { useSupabase } from '../hooks/useSupabase';
 import { supabase } from '../lib/supabase';
 import { formatCurrency } from '../utils/formatCurrency';
 import { formatDateTime } from '../utils/formatDate';
+import { getDriverBalance } from '../utils/constants';
 
 const RECHARGE_STATUSES = {
   pending: { label: 'Pendente', color: 'var(--warning)', bg: 'rgba(255,184,0,0.1)', border: 'rgba(255,184,0,0.2)' },
@@ -26,15 +27,14 @@ export default function Recharges() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  const filters = [];
-  if (statusFilter) filters.push({ column: 'gateway_status', operator: 'eq', value: statusFilter });
-
-  // Main query (corrected to use 'motoboys' instead of 'Motoboy')
   const { data, loading, refetch } = useSupabase('recharges', {
     select: '*, motoboys(users(name))',
-    filters,
     order: { column: 'created_at', ascending: false },
   });
+
+  const filteredData = statusFilter
+    ? (data || []).filter(row => (row.gateway_status ?? row.status) === statusFilter)
+    : data;
 
   // Drivers query for manual recharge selection (only runs when modal opens)
   const { data: drivers, loading: loadingDrivers } = useSupabase('motoboys', {
@@ -69,13 +69,13 @@ export default function Recharges() {
       // 1. Fetch the driver's current wallet balance
       const { data: driverData, error: driverFetchError } = await supabase
         .from('motoboys')
-        .select('wallet_balance')
+        .select('*')
         .eq('id', selectedDriverId)
         .single();
       
       if (driverFetchError) throw driverFetchError;
 
-      const currentBalance = driverData.wallet_balance || 0;
+      const currentBalance = getDriverBalance(driverData);
       const newBalance = currentBalance + parsedAmount;
 
       // 2. Insert recharge log (gateway_status = confirmed)
@@ -88,17 +88,33 @@ export default function Recharges() {
         confirmed_at: new Date().toISOString(),
       };
       
-      const { error: rechargeError } = await supabase
+      let { error: rechargeError } = await supabase
         .from('recharges')
         .insert([rechargePayload]);
+
+      if (rechargeError?.code === 'PGRST204') {
+        const { gateway_status, ...statusPayload } = rechargePayload;
+        const fallbackInsert = await supabase
+          .from('recharges')
+          .insert([{ ...statusPayload, status: gateway_status }]);
+        rechargeError = fallbackInsert.error;
+      }
 
       if (rechargeError) throw rechargeError;
 
       // 3. Update the driver's wallet balance
-      const { error: driverUpdateError } = await supabase
+      let { error: driverUpdateError } = await supabase
         .from('motoboys')
         .update({ wallet_balance: newBalance })
         .eq('id', selectedDriverId);
+
+      if (driverUpdateError?.code === 'PGRST204') {
+        const saldoUpdate = await supabase
+          .from('motoboys')
+          .update({ saldo: newBalance })
+          .eq('id', selectedDriverId);
+        driverUpdateError = saldoUpdate.error;
+      }
 
       if (driverUpdateError) throw driverUpdateError;
 
@@ -111,9 +127,17 @@ export default function Recharges() {
         description: rechargeDescription || 'Recarga manual efetuada pelo administrador',
       };
 
-      const { error: transactionError } = await supabase
+      let { error: transactionError } = await supabase
         .from('transactions')
         .insert([transactionPayload]);
+
+      if (transactionError?.code === 'PGRST204') {
+        const { balance_after, ...fallbackPayload } = transactionPayload;
+        const fallbackInsert = await supabase
+          .from('transactions')
+          .insert([{ ...fallbackPayload, current_balance: balance_after }]);
+        transactionError = fallbackInsert.error;
+      }
 
       if (transactionError) throw transactionError;
 
@@ -137,8 +161,9 @@ export default function Recharges() {
       label: 'Status',
       width: '130px',
       render: row => {
-        const s = RECHARGE_STATUSES[row.gateway_status] || {};
-        return <Badge label={s.label || row.gateway_status} color={s.color} bg={s.bg} border={s.border} />;
+        const status = row.gateway_status ?? row.status;
+        const s = RECHARGE_STATUSES[status] || {};
+        return <Badge label={s.label || status} color={s.color} bg={s.bg} border={s.border} />;
       },
     },
     {
@@ -194,7 +219,7 @@ export default function Recharges() {
 
   const driverOptions = sortedDrivers.map(d => ({
     value: d.id,
-    label: `${d.users?.name || 'Sem nome'} (Saldo: ${formatCurrency(d.wallet_balance || 0)})`
+    label: `${d.users?.name || 'Sem nome'} (Saldo: ${formatCurrency(getDriverBalance(d))})`
   }));
 
   const selectedDriver = sortedDrivers.find(d => d.id === selectedDriverId);
@@ -204,7 +229,7 @@ export default function Recharges() {
       <div className="page-header">
         <div>
           <h1 className="page-title">Recargas</h1>
-          <p className="page-subtitle">Recargas PIX via gateway Asaas ou lançadas manualmente</p>
+          <p className="page-subtitle">Recargas PIX via Pagar.me ou lançadas manualmente</p>
         </div>
         <div className="page-actions">
           <button
@@ -237,7 +262,7 @@ export default function Recharges() {
 
       <DataTable
         columns={columns}
-        data={data}
+        data={filteredData}
         loading={loading}
         searchKeys={['motoboys.users.name', 'gateway_id', 'pix_code']}
         searchPlaceholder="Buscar por motoboy ou gateway ID..."
@@ -317,7 +342,7 @@ export default function Recharges() {
             }}>
               <span style={{ color: 'var(--text-secondary)' }}>Saldo Atual:</span>
               <strong style={{ color: 'var(--success)' }}>
-                {formatCurrency(selectedDriver.wallet_balance || 0)}
+                {formatCurrency(getDriverBalance(selectedDriver))}
               </strong>
             </div>
           )}

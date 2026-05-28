@@ -42,17 +42,32 @@ export const PAYMENT_METHODS = {
 };
 
 export const VEHICLE_CATEGORIES = {
-  bike: 'Bike Entregas',
   motoboy: 'Moto Entregas',
-  mototaxi: 'Moto Táxi',
   car: 'Carro',
-  van: 'Utilitário',
-  truck: 'Caminhão',
+  bike: 'Bike Entregas',
+  mototaxi: 'Moto Táxi',
+  van: 'Utilitario',
+  truck: 'Caminhao',
 };
+
+export const VEHICLE_CATEGORY_OPTIONS = Object.entries(VEHICLE_CATEGORIES).map(([value, label]) => ({
+  value,
+  label,
+}));
 
 export const TRANSACTION_TYPES = {
   recharge: { label: 'Recarga', color: 'var(--success)' },
   commission_debit: { label: 'Comissão', color: 'var(--error)' },
+  delivery_commission: { label: 'Comissão', color: 'var(--error)' },
+  manual_adjustment: { label: 'Ajuste manual', color: 'var(--info)' },
 };
 
 export const COMMISSION_RATE = 0.25;
+
+export function isDriverOnline(driver) {
+  return Boolean(driver?.online ?? driver?.is_online);
+}
+
+export function getDriverBalance(driver) {
+  return Number(driver?.wallet_balance ?? driver?.saldo ?? driver?.balance ?? 0);
+}

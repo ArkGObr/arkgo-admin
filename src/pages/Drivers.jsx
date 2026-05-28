@@ -4,6 +4,7 @@ import Badge from '../components/ui/Badge';
 import { useSupabase } from '../hooks/useSupabase';
 import { useRealtime } from '../hooks/useRealtime';
 import { formatCurrency } from '../utils/formatCurrency';
+import { getDriverBalance, isDriverOnline } from '../utils/constants';
 
 /**
  * Maps URL :category param to database vehicle_category value and display config.
@@ -74,7 +75,7 @@ export default function Drivers() {
       render: row => row.users?.phone || '—',
     },
     {
-      key: 'is_online',
+      key: 'online',
       label: 'Status',
       width: '130px',
       render: row => (
@@ -84,20 +85,20 @@ export default function Drivers() {
               width: 8,
               height: 8,
               borderRadius: '50%',
-              background: row.is_online ? 'var(--success)' : 'var(--text-tertiary)',
-              animation: row.is_online ? 'pulse 2s ease-in-out infinite' : 'none',
+              background: isDriverOnline(row) ? 'var(--success)' : 'var(--text-tertiary)',
+              animation: isDriverOnline(row) ? 'pulse 2s ease-in-out infinite' : 'none',
             }}
           />
           <span style={{
-            color: row.is_online ? 'var(--success)' : 'var(--text-tertiary)',
+            color: isDriverOnline(row) ? 'var(--success)' : 'var(--text-tertiary)',
             fontWeight: 600,
             fontSize: 12,
           }}>
-            {row.is_online ? 'Online' : 'Offline'}
+            {isDriverOnline(row) ? 'Online' : 'Offline'}
           </span>
         </div>
       ),
-      sortKey: row => (row.is_online ? 1 : 0),
+      sortKey: row => (isDriverOnline(row) ? 1 : 0),
     },
     {
       key: 'vehicle_plate',
@@ -114,8 +115,8 @@ export default function Drivers() {
       key: 'wallet_balance',
       label: 'Saldo',
       className: 'text-numeric',
-      render: row => formatCurrency(row.wallet_balance),
-      sortKey: row => row.wallet_balance,
+      render: row => formatCurrency(getDriverBalance(row)),
+      sortKey: row => getDriverBalance(row),
     },
     {
       key: 'user_status',

@@ -1,10 +1,12 @@
 import { Inbox } from 'lucide-react';
 
 export default function EmptyState({
-  icon: Icon = Inbox,
+  icon = Inbox,
   title = 'Nenhum registro',
   description,
 }) {
+  const EmptyIcon = icon;
+
   return (
     <div
       style={{
@@ -17,7 +19,7 @@ export default function EmptyState({
         animation: 'fadeIn var(--duration-slow) ease',
       }}
     >
-      <Icon
+      <EmptyIcon
         size={48}
         style={{ color: 'var(--text-tertiary)', opacity: 0.3, marginBottom: 'var(--space-lg)' }}
       />

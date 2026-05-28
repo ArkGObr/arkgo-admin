@@ -4,14 +4,12 @@ import { Save, Zap, Moon, Sun, Settings2, AlertTriangle, CheckCircle, ChevronDow
 import { supabase } from '../lib/supabase';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
+import { VEHICLE_CATEGORY_OPTIONS } from '../utils/constants';
 import './Settings.css';
 
 /* ──────────────────────────────────────────────
    Helpers
    ────────────────────────────────────────────── */
-function toBool(v) { return v === 'true' || v === true; }
-function toStr(v)  { return String(v); }
-
 const WEEKDAYS = [
   { label: 'D', value: '0' },
   { label: 'S', value: '1' },
@@ -210,9 +208,7 @@ function PercentStepper({ label, value, onChange, min = 0, max = 300, step = 5, 
    ────────────────────────────────────────────── */
 export default function Settings() {
   const [rules, setRules] = useState([]);
-  const [vehicles, setVehicles] = useState([]);
   const [loadingRules, setLoadingRules] = useState(true);
-  const [loadingVeh, setLoadingVeh] = useState(true);
   const [savingRule, setSavingRule] = useState(false);
   const [toast, setToast] = useState(null);
   const [dbError, setDbError] = useState(false);
@@ -242,23 +238,9 @@ export default function Settings() {
     setLoadingRules(false);
   }, []);
 
-  /* ── Load vehicles (to know categories) ── */
-  const loadVehicles = useCallback(async () => {
-    setLoadingVeh(true);
-    const { data, error } = await supabase
-      .from('vehicle_pricing')
-      .select('id, category, name, is_active')
-      .order('category');
+  useEffect(() => { queueMicrotask(loadRules); }, [loadRules]);
 
-    if (!error) {
-      setVehicles(data || []);
-    }
-    setLoadingVeh(false);
-  }, []);
-
-  useEffect(() => { loadRules(); loadVehicles(); }, [loadRules, loadVehicles]);
-
-  const categories = Array.from(new Set(vehicles.map(v => v.category))).filter(Boolean);
+  const categories = VEHICLE_CATEGORY_OPTIONS.map(option => option.value);
 
   /* ── Toggle Rule Status ── */
   async function handleToggleRule(rule) {
@@ -459,7 +441,7 @@ CREATE POLICY "Public read pricing_rules"
 DROP POLICY IF EXISTS "Auth write pricing_rules" ON pricing_rules;
 CREATE POLICY "Auth write pricing_rules"
   ON pricing_rules FOR ALL USING (auth.role() = 'authenticated');`}</pre>
-        <Button onClick={() => { setDbError(false); loadRules(); loadVehicles(); }}>
+        <Button onClick={() => { setDbError(false); loadRules(); }}>
           Tentar novamente
         </Button>
       </div>
