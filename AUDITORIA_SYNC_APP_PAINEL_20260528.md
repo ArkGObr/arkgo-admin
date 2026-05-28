@@ -33,4 +33,4 @@ Data: 2026-05-28
 ## Validacao
 
 - `npm run build`: aprovado.
-- `npm run lint`: ainda falha por problemas preexistentes fora desta auditoria, principalmente em `useAuth.jsx`, `useSupabase.js`, `DocumentReviewDetails.jsx`, `LandingLeads.jsx`, `Sidebar.jsx` e `EmptyState.jsx`.
+- `npm run lint`: aprovado, sem erros.
