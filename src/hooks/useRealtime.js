@@ -12,6 +12,13 @@ import { supabase } from '../lib/supabase';
 export function useRealtime(table, { onInsert, onUpdate, onDelete, filter } = {}) {
   const channelRef = useRef(null);
 
+  // Keep latest callbacks in a ref to avoid re-subscribing on inline callback reference changes
+  const callbacksRef = useRef({ onInsert, onUpdate, onDelete });
+
+  useEffect(() => {
+    callbacksRef.current = { onInsert, onUpdate, onDelete };
+  }, [onInsert, onUpdate, onDelete]);
+
   useEffect(() => {
     const channelName = `admin-${table}-${Date.now()}`;
     
@@ -28,15 +35,16 @@ export function useRealtime(table, { onInsert, onUpdate, onDelete, filter } = {}
     const channel = supabase
       .channel(channelName)
       .on('postgres_changes', channelConfig, (payload) => {
+        const { onInsert: currentInsert, onUpdate: currentUpdate, onDelete: currentDelete } = callbacksRef.current;
         switch (payload.eventType) {
           case 'INSERT':
-            onInsert?.(payload.new);
+            currentInsert?.(payload.new);
             break;
           case 'UPDATE':
-            onUpdate?.(payload.new, payload.old);
+            currentUpdate?.(payload.new, payload.old);
             break;
           case 'DELETE':
-            onDelete?.(payload.old);
+            currentDelete?.(payload.old);
             break;
         }
       })
@@ -49,5 +57,5 @@ export function useRealtime(table, { onInsert, onUpdate, onDelete, filter } = {}
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [table, filter, onInsert, onUpdate, onDelete]);
+  }, [table, filter]);
 }
