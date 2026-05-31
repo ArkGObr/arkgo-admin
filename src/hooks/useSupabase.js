@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 const DEFAULT_FILTERS = [];
@@ -23,6 +23,20 @@ export function useSupabase(table, options = {}) {
     enabled = true,
   } = options;
 
+  const filtersRef = useRef(filters);
+  const orderRef = useRef(order);
+
+  const filtersStr = JSON.stringify(filters);
+  const orderStr = JSON.stringify(order);
+
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filtersStr]);
+
+  useEffect(() => {
+    orderRef.current = order;
+  }, [orderStr]);
+
   const fetchData = useCallback(async () => {
     if (!enabled) {
       setLoading(false);
@@ -36,7 +50,7 @@ export function useSupabase(table, options = {}) {
       let query = supabase.from(table).select(select);
 
       // Apply filters
-      for (const filter of filters) {
+      for (const filter of filtersRef.current) {
         const { column, operator, value } = filter;
         switch (operator) {
           case 'eq': query = query.eq(column, value); break;
@@ -54,8 +68,8 @@ export function useSupabase(table, options = {}) {
       }
 
       // Apply order
-      if (order) {
-        query = query.order(order.column, { ascending: order.ascending ?? false });
+      if (orderRef.current) {
+        query = query.order(orderRef.current.column, { ascending: orderRef.current.ascending ?? false });
       }
 
       // Apply limit
@@ -78,7 +92,7 @@ export function useSupabase(table, options = {}) {
     } finally {
       setLoading(false);
     }
-  }, [table, select, filters, order, limit, single, enabled]);
+  }, [table, select, filtersStr, orderStr, limit, single, enabled]);
 
   useEffect(() => {
     queueMicrotask(fetchData);
